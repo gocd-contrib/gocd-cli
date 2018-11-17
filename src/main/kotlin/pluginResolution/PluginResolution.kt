@@ -1,64 +1,49 @@
 package pluginResolution
 
 import com.thoughtworks.go.plugin.api.GoPlugin
-import com.thoughtworks.go.plugin.api.annotation.Extension
 import io.squark.nestedjarclassloader.NestedJarClassLoader
+import utils.silenceConsole
 import java.io.File
-import java.lang.reflect.Modifier
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import javax.xml.parsers.DocumentBuilderFactory
-import kotlin.streams.toList
 
-fun loadPlugins(plugins: File): Map<String, Class<*>> {
+fun loadPluginById(plugins: File, pluginId: String): Class<*> {
+  val jarPath = jarByPluginId(plugins, pluginId)
+  val jarFile = JarFile(jarPath)
+
   val cl = NestedJarClassLoader(ClassLoader.getSystemClassLoader(), null)
+  cl.addURLs(jarPath.toURI().toURL())
 
-  return Files.walk(plugins.toPath(), 1).filter(isJar()).toList().fold(mutableMapOf<String, Class<*>>()) { memo, jarPath ->
-    val jarFile = JarFile(jarPath.toFile())
-    cl.addURLs(jarPath.toUri().toURL())
-    val id = getPluginId(jarFile)
+  val entries = jarFile.entries()
+  while (entries.hasMoreElements()) {
+    val entry = entries.nextElement()
 
-    if (null != id && id.isNotBlank()) {
-      memo[id] = GoPlugin::class.java
-      val entries = jarFile.entries()
-      while (entries.hasMoreElements()) {
-        val entry = entries.nextElement()
+    if (!isClassEntry(entry)) continue
+    val klass = cl.loadClass(toClassName(entry))
 
-        if (!isClassEntry(entry)) continue
-        val klass = cl.loadClass(toClassName(entry))
-        if (meetsGoPluginCriteria(klass) && isInstantiable(klass)) {
-          memo[id] = klass
-        }
-      }
+    if (meetsGoPluginCriteria(klass) && isInstantiable(klass)) {
+      return klass
     }
-    memo
-  }.toMap()
+  }
+
+  throw IllegalStateException("Failed to identify plugin class for pluginId `$pluginId` in plugin jar [${jarPath.absolutePath}]")
 }
 
-internal fun isInstantiable(klass: Class<*>): Boolean {
-  return !isANonStaticInnerClass(klass) && null != klass.getConstructor()
-}
+fun instance(pluginId: String, pluginClass: Class<*>, requiredExtension: String, extensionVersion: String): GoPlugin {
+  val plugin = silenceConsole {
+    pluginClass.getDeclaredConstructor().newInstance() as GoPlugin
+  }
 
-internal fun isANonStaticInnerClass(candidateClass: Class<*>): Boolean {
-  return candidateClass.isMemberClass && !Modifier.isStatic(candidateClass.modifiers)
-}
+  val metadata = plugin.pluginIdentifier()
+  if (requiredExtension != metadata.extension) {
+    throw IllegalArgumentException("Plugin `$pluginId` is not a `$requiredExtension` plugin!")
+  }
 
-internal fun meetsGoPluginCriteria(klass: Class<*>): Boolean {
-  return GoPlugin::class.java.isAssignableFrom(klass) &&
-    null != klass.getAnnotation(Extension::class.java) &&
-    !klass.isInterface && Modifier.isPublic(klass.modifiers) &&
-    !Modifier.isAbstract(klass.modifiers)
-}
+  if (!metadata.supportedExtensionVersions.contains(extensionVersion)) {
+    throw IllegalArgumentException("Plugin `$pluginId` must support at least $requiredExtension $extensionVersion; this one supports only ${metadata.supportedExtensionVersions.joinToString(", ")}")
+  }
 
-internal fun toClassName(entry: JarEntry) =
-  entry.realName.removePrefix("/").removeSuffix(".class").replace("/", ".")
-
-internal fun isClassEntry(entry: JarEntry): Boolean {
-  val fullPath = entry.realName
-  return fullPath.endsWith(".class") && !(fullPath.startsWith("META-INF/") || fullPath.startsWith("lib/"))
+  return plugin
 }
 
 internal fun getPluginId(jarFile: JarFile): String? {
@@ -67,9 +52,4 @@ internal fun getPluginId(jarFile: JarFile): String? {
   val xml = DocumentBuilderFactory.newInstance().newDocumentBuilder()
   val doc = xml.parse(content)
   return doc.documentElement.getAttribute("id")
-}
-
-internal fun isJar(): (Path) -> Boolean {
-  val glob = FileSystems.getDefault().getPathMatcher("glob:*.jar")
-  return { p -> glob.matches(p.fileName) }
 }

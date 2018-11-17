@@ -1,5 +1,5 @@
 buildscript {
-  ext.kotlin_version = "1.3.0"
+  project.ext.kotlin_version = "1.3.0"
 
   repositories {
     mavenCentral()
@@ -16,6 +16,7 @@ allprojects {
   version = "0.0.1"
 
   repositories {
+    maven { url "http://repo.spring.io/plugins-release" }
     mavenCentral()
   }
 
@@ -25,9 +26,10 @@ allprojects {
     compile group: 'com.github.ajalt', name: 'clikt', version: '1.5.0'
     compile group: 'io.squark', name: 'nested-jar-classloader', version: '0.1.10'
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
 
-//    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
-//    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    // testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    // testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
   }
 
   jar {
