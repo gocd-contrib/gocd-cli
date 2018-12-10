@@ -13,17 +13,17 @@ var CheckCmd = &cobra.Command{
 	Short: "Checks a definition file for syntactical and structural correctness",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		run(args)
+		runCheck(args)
 	},
 }
 
-func run(args []string) {
+func runCheck(args []string) {
 	PluginJar = utils.LocatePlugin(PluginId, PluginDir)
 
 	cmdArgs := append([]string{"-jar", PluginJar, "syntax"}, args...)
 	cmd := exec.Command("java", cmdArgs...)
 
-	if !utils.Exec(cmd, os.Stdout, os.Stderr) {
+	if !utils.Exec(cmd, os.Stdin, os.Stdout, os.Stderr) {
 		os.Exit(1)
 	}
 }
