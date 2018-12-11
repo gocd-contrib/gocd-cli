@@ -1,11 +1,11 @@
 package configrepo
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/marques-work/gocd-cli/utils"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
 
@@ -30,11 +30,11 @@ func init() {
 		if d, err := homedir.Dir(); err == nil {
 			PluginDir = filepath.Join(d, ".gocd", "plugins")
 		} else {
-			log.Fatal(err)
+			utils.AbortLoudly(err)
 		}
 	}
 
 	if err := os.MkdirAll(PluginDir, os.ModePerm); err != nil {
-		log.Fatal(err)
+		utils.AbortLoudly(err)
 	}
 }

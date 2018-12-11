@@ -18,12 +18,17 @@ var CheckCmd = &cobra.Command{
 }
 
 func runCheck(args []string) {
+	if "" == PluginId {
+		utils.DieLoudly(1, "You must provide a --plugin-id")
+	}
+
 	PluginJar = utils.LocatePlugin(PluginId, PluginDir)
 
 	cmdArgs := append([]string{"-jar", PluginJar, "syntax"}, args...)
+	utils.Echof("args: %v", cmdArgs)
 	cmd := exec.Command("java", cmdArgs...)
 
-	if !utils.Exec(cmd, os.Stdin, os.Stdout, os.Stderr) {
+	if !utils.ExecQ(cmd) {
 		os.Exit(1)
 	}
 }

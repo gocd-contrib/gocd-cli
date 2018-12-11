@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/marques-work/gocd-cli/cmd/configrepo"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/marques-work/gocd-cli/utils"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,8 +23,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		utils.AbortLoudly(err)
 	}
 }
 
@@ -33,6 +32,7 @@ func init() {
 	rootCmd.AddCommand(configrepo.RootCmd)
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.gocd/settings.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(&utils.SuppressOutput, "quiet", "q", false, "silence output")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -44,14 +44,12 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			utils.AbortLoudly(err)
 		}
 
 		cfgDir := filepath.Join(home, ".gocd")
 		os.MkdirAll(cfgDir, os.ModePerm)
 
-		// Search config in home directory with name ".clicli" (without extension).
 		viper.AddConfigPath(cfgDir)
 		viper.SetConfigName("settings")
 	}
@@ -60,6 +58,6 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		utils.Echof("Using config file:", viper.ConfigFileUsed())
 	}
 }

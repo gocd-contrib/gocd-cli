@@ -1,12 +1,21 @@
 package utils
 
 import (
-	"log"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 )
 
-func Exec(cmd *exec.Cmd, pipeIn *os.File, pipeOut *os.File, pipeErr *os.File) bool {
+func ExecQ(cmd *exec.Cmd) bool {
+	if SuppressOutput {
+		return Exec(cmd, os.Stdin, ioutil.Discard, ioutil.Discard)
+	} else {
+		return Exec(cmd, os.Stdin, os.Stdout, os.Stderr)
+	}
+}
+
+func Exec(cmd *exec.Cmd, pipeIn io.Reader, pipeOut io.Writer, pipeErr io.Writer) bool {
 	cmd.Stdin = pipeIn
 	cmd.Stdout = pipeOut
 	cmd.Stderr = pipeErr
@@ -14,7 +23,7 @@ func Exec(cmd *exec.Cmd, pipeIn *os.File, pipeOut *os.File, pipeErr *os.File) bo
 	err := cmd.Start()
 
 	if err != nil {
-		log.Fatalf("cmd.Start() failed with '%s'\n", err)
+		DieLoudly(1, "Failed to execute `%s`; error: %s", cmd, err)
 	}
 
 	err = cmd.Wait()
