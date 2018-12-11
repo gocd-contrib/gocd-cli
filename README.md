@@ -29,6 +29,6 @@ There are built-in help screens to the `gocd` binary if you pass in `-h` or invo
 # `-i` specifies the plugin id; in this case, `yaml.config.plugin` is the YAML Config Repo Plugin's identifier.
 # Use json.config.plugin for the JSON Config Repo Plugin
 
-$ ./gocd configrepo check -i yaml.config.plugin my-pipeline.yaml
+$ ./gocd configrepo check -i yaml.config.plugin my-pipeline.gocd.yaml
 $ OK
 ```
