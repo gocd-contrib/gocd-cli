@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/marques-work/gocd-cli/cmd"
+	"github.com/gocd-contrib/gocd-cli/cmd"
 )
 
 func main() {

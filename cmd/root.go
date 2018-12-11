@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/marques-work/gocd-cli/cmd/configrepo"
-	"github.com/marques-work/gocd-cli/utils"
+	"github.com/gocd-contrib/gocd-cli/cmd/configrepo"
+	"github.com/gocd-contrib/gocd-cli/utils"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
