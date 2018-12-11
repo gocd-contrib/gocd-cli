@@ -4,6 +4,8 @@ A command-line companion to GoCD. In its current state, it can only perform synt
 
 ## Development
 
+This is a [golang](https://golang.org/) project, so if you are new to this, please set up your environment according to [this page](https://golang.org/doc/code.html#Workspaces).
+
 To build the `gocd` binary, run the `build.sh` command:
 
 ```bash
