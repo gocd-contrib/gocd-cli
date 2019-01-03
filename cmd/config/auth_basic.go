@@ -18,6 +18,7 @@ func runBasicAuth(args []string) {
 	// 1. get username and password arguments
 	// 2. validate non-empty strings
 	// 3. write auth to config (include type=basic + credentials)
+	conf().SetBasicAuth("user", "pass")
 }
 
 func init() {

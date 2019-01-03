@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/gocd-contrib/gocd-cli/cfg"
 	"github.com/gocd-contrib/gocd-cli/cmd/config"
 	"github.com/gocd-contrib/gocd-cli/cmd/configrepo"
 	"github.com/gocd-contrib/gocd-cli/utils"
@@ -23,10 +24,10 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(config.Setup)
+	cobra.OnInitialize(cfg.Setup)
 	rootCmd.AddCommand(config.RootCmd)
 	rootCmd.AddCommand(configrepo.RootCmd)
 
-	rootCmd.PersistentFlags().StringVarP(&config.CfgFile, "config", "c", "", "config file (default is $HOME/.gocd/settings.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfg.CfgFile, "config", "c", "", "config file (default is $HOME/.gocd/settings.yaml)")
 	rootCmd.PersistentFlags().BoolVarP(&utils.SuppressOutput, "quiet", "q", false, "silence output")
 }

@@ -20,6 +20,7 @@ func runServerUrl(args []string) {
 	// 3. write parsed url to config
 	//      - either as a full url
 	//      - or as individual parts (e.g. host, port, protocol, path, authString)
+	conf().SetServerUrl("argument")
 }
 
 func init() {
