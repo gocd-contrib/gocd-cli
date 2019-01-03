@@ -5,6 +5,7 @@ set -e
 go get github.com/mitchellh/go-homedir \
   github.com/spf13/cobra \
   github.com/spf13/viper \
+  github.com/spf13/afero \
   github.com/blang/semver \
   github.com/dustin/go-humanize
 

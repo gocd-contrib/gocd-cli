@@ -7,6 +7,6 @@ func Conf() *Config {
 	return conf
 }
 
-func Setup() {
-	Conf().Consume(CfgFile)
+func Setup() error {
+	return Conf().Consume(CfgFile)
 }

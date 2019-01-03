@@ -24,7 +24,11 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(cfg.Setup)
+	cobra.OnInitialize(func() {
+		if err := cfg.Setup(); err != nil {
+			utils.AbortLoudly(err)
+		}
+	})
 	rootCmd.AddCommand(config.RootCmd)
 	rootCmd.AddCommand(configrepo.RootCmd)
 

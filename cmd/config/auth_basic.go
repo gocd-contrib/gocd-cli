@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/gocd-contrib/gocd-cli/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -10,15 +11,14 @@ var BasicAuthCmd = &cobra.Command{
 	Long:  "This sets the basic authentication credentials for GoCD API requests used by this CLI tool.",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		runBasicAuth(args)
+		if err := runBasicAuth(args); err != nil {
+			utils.AbortLoudly(err)
+		}
 	},
 }
 
-func runBasicAuth(args []string) {
-	// 1. get username and password arguments
-	// 2. validate non-empty strings
-	// 3. write auth to config (include type=basic + credentials)
-	conf().SetBasicAuth("user", "pass")
+func runBasicAuth(args []string) error {
+	return conf().SetBasicAuth(args[0], args[1])
 }
 
 func init() {
