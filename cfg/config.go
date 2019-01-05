@@ -71,24 +71,23 @@ func (c *Config) Consume(configFile string) error {
 	if configFile != "" {
 		// Use config file from the flag.
 		c.native.SetConfigFile(configFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			return err
-		}
-
-		cfgDir := filepath.Join(home, CONFIG_DIRNAME)
-
-		if err = c.fs.MkdirAll(cfgDir, os.ModePerm); err != nil {
-			return err
-		}
-
-		c.native.AddConfigPath(cfgDir)
-		c.native.SetConfigName(CONFIG_FILENAME)
-		c.native.SetConfigType(CONFIG_FILETYPE)
-		configFile = filepath.Join(cfgDir, CONFIG_FILENAME+"."+CONFIG_FILETYPE)
+		return c.native.ReadInConfig()
 	}
+	// Find home directory.
+	home, err := homedir.Dir()
+	if err != nil {
+		return err
+	}
+
+	cfgDir := filepath.Join(home, CONFIG_DIRNAME)
+
+	if err = c.fs.MkdirAll(cfgDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	c.native.AddConfigPath(cfgDir)
+	c.native.SetConfigName(CONFIG_FILENAME)
+	configFile = filepath.Join(cfgDir, CONFIG_FILENAME+"."+CONFIG_FILETYPE)
 
 	// If a config file is found, read it in.
 	if err := c.native.ReadInConfig(); err == nil {
@@ -104,10 +103,11 @@ func (c *Config) Consume(configFile string) error {
 }
 
 func NewConfig() *Config {
-	native := viper.New()
 	fs := afero.NewOsFs()
-	native.SetFs(fs)
+	native := viper.New()
+	native.SetConfigType(CONFIG_FILETYPE)
 	native.SetEnvPrefix(CONFIG_ENV_PFX)
+	native.SetFs(fs)
 	native.AutomaticEnv() // read in environment variables that match
 
 	return &Config{native: native, fs: fs}

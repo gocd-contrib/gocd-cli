@@ -1,7 +1,10 @@
 package cfg
 
 import (
+	"io"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -16,16 +19,21 @@ const TEST_PASSWORD = "badger"
 
 type keyVal map[string]interface{}
 
-// does the same as testConf() but ensures that the config file is created on the Fs
-func ensureConf() *Config {
-	c := testConf()
+func writeContent(fs afero.Fs, path, content string) error {
+	f, e := fs.OpenFile(path, os.O_CREATE|os.O_WRONLY, os.FileMode(0644))
 
-	c.native.WriteConfigAs(TEST_CONF_FILE)
-	return c
+	if e != nil {
+		return e
+	}
+
+	defer f.Close()
+	_, e = io.Copy(f, strings.NewReader(content))
+	return e
 }
 
 // creates a test Config instance, backed by a memory mapped afero.Fs
-func testConf() *Config {
+// if create == true, creates an empty config file on the afero.Fs
+func testConf(create bool) *Config {
 	v := viper.New()
 	v.SetEnvPrefix(CONFIG_ENV_PFX)
 	v.AutomaticEnv()
@@ -34,12 +42,17 @@ func testConf() *Config {
 	v.SetConfigType(CONFIG_FILETYPE)
 	v.SetConfigName(CONFIG_FILENAME)
 	v.SetConfigFile(TEST_CONF_FILE)
+
+	if create {
+		v.WriteConfigAs(TEST_CONF_FILE)
+	}
+
 	return &Config{native: v, fs: fs}
 }
 
 func TestGetBasicAuth(t *testing.T) {
 	as := asserts(t)
-	c := ensureConf()
+	c := testConf(true)
 	c.native.Set("auth.type", "basic")
 	c.native.Set("auth.user", TEST_USER)
 	c.native.Set("auth.password", TEST_PASSWORD)
@@ -54,7 +67,7 @@ func TestGetBasicAuth(t *testing.T) {
 
 func TestSetBasicAuth(t *testing.T) {
 	as := asserts(t)
-	c := ensureConf()
+	c := testConf(true)
 
 	as.configEq(make(keyVal, 0), c.fs)
 
@@ -71,16 +84,17 @@ func TestSetBasicAuth(t *testing.T) {
 
 func TestSetBasicAuthShouldValidatePrescenseOfUserAndPassword(t *testing.T) {
 	as := asserts(t)
-	c := ensureConf()
+	c := testConf(true)
 
 	as.err("Must specify user and password", c.SetBasicAuth("", TEST_PASSWORD))
 	as.err("Must specify user and password", c.SetBasicAuth(TEST_USER, ""))
 	as.err("Must specify user and password", c.SetBasicAuth("", ""))
+	as.eq(0, len(c.GetAuth()))
 }
 
 func TestSetServerURL(t *testing.T) {
 	as := asserts(t)
-	c := ensureConf()
+	c := testConf(true)
 
 	as.configEq(make(keyVal, 0), c.fs)
 
@@ -95,7 +109,7 @@ func TestSetServerURL(t *testing.T) {
 
 func TestGetServerURL(t *testing.T) {
 	as := asserts(t)
-	c := ensureConf()
+	c := testConf(true)
 	c.native.Set("server.url", TEST_URL)
 	c.native.WriteConfig()
 
@@ -104,17 +118,18 @@ func TestGetServerURL(t *testing.T) {
 
 func TestSetServerURLValidatesURL(t *testing.T) {
 	as := asserts(t)
-	c := ensureConf()
+	c := testConf(true)
 
 	as.err("Must specify a url", c.SetServerUrl(""))
 	as.err("URL must include protocol and hostname", c.SetServerUrl("foo.bar"))
 	as.err("URL must include protocol and hostname", c.SetServerUrl("http://"))
 	as.err("Port must be numeric", c.SetServerUrl("http://localhost:foo/bar"))
+	as.eq("", c.GetServerUrl())
 }
 
 func TestConsumeCreatesDefaultConfigFileIfNotExist(t *testing.T) {
 	as := asserts(t)
-	c := testConf()
+	c := testConf(false)
 
 	baseDir, e := homedir.Dir()
 	as.ok(e)
@@ -134,4 +149,60 @@ func TestConsumeCreatesDefaultConfigFileIfNotExist(t *testing.T) {
 	isDir, er := afero.IsDir(c.fs, expectedPath)
 	as.ok(er)
 	as.not(isDir)
+}
+
+func TestConsumeReturnsErrorIfSpecifiedConfigFileNotExists(t *testing.T) {
+	as := asserts(t)
+	c := testConf(false)
+
+	expectedPath := "foo.yaml"
+	exists, err := afero.Exists(c.fs, expectedPath)
+
+	as.ok(err)
+	as.not(exists)
+
+	as.err("open "+expectedPath+": file does not exist", c.Consume(expectedPath))
+
+	exists, err = afero.Exists(c.fs, expectedPath)
+	as.ok(err)
+	as.not(exists)
+}
+
+func TestConsumeLoadsConfigFileAtDefaultPathWhenExists(t *testing.T) {
+	as := asserts(t)
+	c := testConf(false)
+
+	baseDir, e := homedir.Dir()
+	as.ok(e)
+
+	expectedPath := filepath.Join(baseDir, CONFIG_DIRNAME, TEST_CONF_FILE)
+
+	as.ok(writeContent(c.fs, expectedPath, `server:
+  url: http://test-server:8080
+`))
+
+	exists, err := afero.Exists(c.fs, expectedPath)
+	as.ok(err)
+	as.is(exists)
+
+	as.ok(c.Consume(""))
+	as.eq("http://test-server:8080", c.GetServerUrl())
+}
+
+func TestConsumeLoadsSpecifiedConfigFileWhenExists(t *testing.T) {
+	as := asserts(t)
+	c := testConf(false)
+
+	expectedPath := "/etc/foo.yaml"
+
+	as.ok(writeContent(c.fs, expectedPath, `server:
+  url: http://test-server:8080
+`))
+
+	exists, err := afero.Exists(c.fs, expectedPath)
+	as.ok(err)
+	as.is(exists)
+
+	as.ok(c.Consume(expectedPath))
+	as.eq("http://test-server:8080", c.GetServerUrl())
 }
