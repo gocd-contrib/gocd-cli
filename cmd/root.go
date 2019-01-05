@@ -14,9 +14,10 @@ import (
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "gocd",
-	Short: "A command-line companion to a GoCD server",
-	Long:  `A command-line helper to GoCD to help build config-repos, among other things (?)`,
+	Use:       "gocd",
+	Short:     "A command-line companion to a GoCD server",
+	Long:      `A command-line helper to GoCD to help build config-repos, among other things (?)`,
+	ValidArgs: []string{"configrepo", "help"}, // bash-completion
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -58,6 +59,6 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		utils.Echof("Using config file:", viper.ConfigFileUsed())
+		utils.Echofln("Using config file:", viper.ConfigFileUsed())
 	}
 }

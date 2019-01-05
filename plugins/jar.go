@@ -1,4 +1,4 @@
-package utils
+package plugins
 
 import (
 	"archive/zip"
@@ -7,15 +7,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gocd-contrib/gocd-cli/utils"
 )
 
-func LocatePlugin(id string, path string) string {
-	var found string
-
+func PluginById(id string, path string) (found string) {
 	if d, err := os.Open(path); err == nil {
 		defer d.Close()
 
-		if IsDir(path) {
+		if utils.IsDir(path) {
 			if files, err := d.Readdir(-1); err == nil {
 				for _, file := range files {
 					if strings.HasSuffix(file.Name(), ".jar") {
@@ -28,7 +28,7 @@ func LocatePlugin(id string, path string) string {
 					}
 				}
 			} else {
-				Abort(err)
+				utils.AbortLoudly(err)
 			}
 		} else {
 			if isPluginMatchingId(id, d.Name()) {
@@ -36,24 +36,36 @@ func LocatePlugin(id string, path string) string {
 			}
 		}
 	} else {
-		Abort(err)
+		utils.AbortLoudly(err)
 	}
+	return
+}
+
+func LocatePlugin(id string, path string) string {
+	found := PluginById(id, path)
 
 	if found == "" {
-		DieLoudly(1, "Could not find any plugin jars with id: %s", id)
+		utils.DieLoudly(1, "Could not find any plugin jars with id: %s", id)
 	}
 
 	return found
 }
 
 type goplugin struct {
-	Id string `xml:"id,attr"`
+	Id    string `xml:"id,attr"`
+	About about  `xml:"about"`
+}
+
+type about struct {
+	XMLName xml.Name `xml:"about"`
+	Name    string   `xml:"name"`
+	Version string   `xml:"version"`
 }
 
 func isPluginMatchingId(id string, jar string) bool {
 	r, err := zip.OpenReader(jar)
 	if err != nil {
-		Abort(err)
+		utils.AbortLoudly(err)
 	}
 
 	defer r.Close()
@@ -66,7 +78,7 @@ func isPluginMatchingId(id string, jar string) bool {
 		if f.Name == "plugin.xml" {
 			rc, err := f.Open()
 			if err != nil {
-				Abort(err)
+				utils.AbortLoudly(err)
 			}
 
 			b, _ := ioutil.ReadAll(rc)
