@@ -9,6 +9,7 @@ import (
 
 	"github.com/gocd-contrib/gocd-cli/utils"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 )
 
@@ -21,6 +22,7 @@ const (
 
 type Config struct {
 	native *viper.Viper
+	fs     afero.Fs
 }
 
 var onlyNumeric, _ = regexp.Compile(`^\d+$`)
@@ -78,7 +80,7 @@ func (c *Config) Consume(configFile string) error {
 
 		cfgDir := filepath.Join(home, CONFIG_DIRNAME)
 
-		if err = os.MkdirAll(cfgDir, os.ModePerm); err != nil {
+		if err = c.fs.MkdirAll(cfgDir, os.ModePerm); err != nil {
 			return err
 		}
 
@@ -91,16 +93,22 @@ func (c *Config) Consume(configFile string) error {
 	// If a config file is found, read it in.
 	if err := c.native.ReadInConfig(); err == nil {
 		utils.Echofln("Using config file: %s", c.native.ConfigFileUsed())
-		return c.native.WriteConfigAs(configFile)
+		return nil
 	} else {
+		switch err.(type) {
+		case viper.ConfigFileNotFoundError:
+			return c.native.WriteConfigAs(configFile)
+		}
 		return err
 	}
 }
 
 func NewConfig() *Config {
 	native := viper.New()
+	fs := afero.NewOsFs()
+	native.SetFs(fs)
 	native.SetEnvPrefix(CONFIG_ENV_PFX)
 	native.AutomaticEnv() // read in environment variables that match
 
-	return &Config{native: native}
+	return &Config{native: native, fs: fs}
 }
