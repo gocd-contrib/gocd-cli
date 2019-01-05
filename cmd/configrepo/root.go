@@ -15,9 +15,10 @@ var PluginJar string
 
 // RootCmd represents the configrepo command
 var RootCmd = &cobra.Command{
-	Use:   "configrepo",
-	Short: "GoCD config-repo functions",
-	Long:  `Functions to help development of config-repos in GoCD (pipeline configs as code)`,
+	Use:       "configrepo",
+	Short:     "GoCD config-repo functions",
+	Long:      `Functions to help development of config-repos in GoCD (pipeline configs as code)`,
+	ValidArgs: []string{"syntax", "fetch", "preflight", "help"}, // bash-completion
 }
 
 func init() {

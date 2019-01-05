@@ -4,13 +4,14 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/gocd-contrib/gocd-cli/plugins"
 	"github.com/gocd-contrib/gocd-cli/utils"
 	"github.com/spf13/cobra"
 )
 
-var CheckCmd = &cobra.Command{
-	Use:   "check",
-	Short: "Checks a definition file for syntactical and structural correctness",
+var SyntaxCmd = &cobra.Command{
+	Use:   "syntax",
+	Short: "Checks one or more definition files for syntactical correctness",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		runCheck(args)
@@ -22,10 +23,9 @@ func runCheck(args []string) {
 		utils.DieLoudly(1, "You must provide a --plugin-id")
 	}
 
-	PluginJar = utils.LocatePlugin(PluginId, PluginDir)
+	PluginJar = plugins.LocatePlugin(PluginId, PluginDir)
 
 	cmdArgs := append([]string{"-jar", PluginJar, "syntax"}, args...)
-	utils.Echof("args: %v", cmdArgs)
 	cmd := exec.Command("java", cmdArgs...)
 
 	if !utils.ExecQ(cmd) {
@@ -34,5 +34,5 @@ func runCheck(args []string) {
 }
 
 func init() {
-	RootCmd.AddCommand(CheckCmd)
+	RootCmd.AddCommand(SyntaxCmd)
 }

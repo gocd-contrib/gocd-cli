@@ -8,21 +8,27 @@ import (
 var SuppressOutput bool
 
 // Writes to STDOUT unless SuppressOutput is set.
-// Uses `printf()` formatting, but also appends a newline
-// like `println()`.
+// Uses `printf()` formatting
 func Echof(f string, t ...interface{}) {
 	if !SuppressOutput {
-		fmt.Fprintf(os.Stdout, f+"\n", t...)
+		fmt.Fprintf(os.Stdout, f, t...)
 	}
 }
 
+func Echofln(f string, t ...interface{}) {
+	Echof(f+"\n", t...)
+}
+
 // Writes to STDERR unless SuppressOutput is set.
-// Uses `printf()` formatting, but also appends a newline
-// like `println()`.
+// Uses `printf()` formatting
 func Errf(f string, t ...interface{}) {
 	if !SuppressOutput {
-		fmt.Fprintf(os.Stderr, f+"\n", t...)
+		fmt.Fprintf(os.Stderr, f, t...)
 	}
+}
+
+func Errfln(f string, t ...interface{}) {
+	Errf(f+"\n", t...)
 }
 
 // Exits with exitCode after printing message.
@@ -30,9 +36,9 @@ func Errf(f string, t ...interface{}) {
 // on value of exitCode
 func Die(exitCode int, f string, t ...interface{}) {
 	if exitCode != 0 {
-		Errf(f, t...)
+		Errfln(f, t...)
 	} else {
-		Echof(f, t...)
+		Echofln(f, t...)
 	}
 
 	os.Exit(exitCode)
