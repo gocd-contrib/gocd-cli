@@ -1,54 +1,17 @@
 package cfg
 
 import (
-	"io"
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/afero"
-	"github.com/spf13/viper"
 )
 
 const TEST_CONF_FILE = CONFIG_FILENAME + "." + CONFIG_FILETYPE
 const TEST_URL = "http://localhost:1234/go/test"
 const TEST_USER = "admin"
 const TEST_PASSWORD = "badger"
-
-type keyVal map[string]interface{}
-
-func writeContent(fs afero.Fs, path, content string) error {
-	f, e := fs.OpenFile(path, os.O_CREATE|os.O_WRONLY, os.FileMode(0644))
-
-	if e != nil {
-		return e
-	}
-
-	defer f.Close()
-	_, e = io.Copy(f, strings.NewReader(content))
-	return e
-}
-
-// creates a test Config instance, backed by a memory mapped afero.Fs
-// if create == true, creates an empty config file on the afero.Fs
-func testConf(create bool) *Config {
-	v := viper.New()
-	v.SetEnvPrefix(CONFIG_ENV_PFX)
-	v.AutomaticEnv()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigType(CONFIG_FILETYPE)
-	v.SetConfigName(CONFIG_FILENAME)
-	v.SetConfigFile(TEST_CONF_FILE)
-
-	if create {
-		v.WriteConfigAs(TEST_CONF_FILE)
-	}
-
-	return &Config{native: v, fs: fs}
-}
 
 func TestGetBasicAuth(t *testing.T) {
 	as := asserts(t)
@@ -69,11 +32,11 @@ func TestSetBasicAuth(t *testing.T) {
 	as := asserts(t)
 	c := testConf(true)
 
-	as.configEq(make(keyVal, 0), c.fs)
+	as.configEq(make(dict, 0), c.fs)
 
 	as.ok(c.SetBasicAuth(TEST_USER, TEST_PASSWORD))
 
-	as.configEq(keyVal{
+	as.configEq(dict{
 		"auth": map[string]string{
 			"type":     "basic",
 			"user":     TEST_USER,
@@ -96,11 +59,11 @@ func TestSetServerURL(t *testing.T) {
 	as := asserts(t)
 	c := testConf(true)
 
-	as.configEq(make(keyVal, 0), c.fs)
+	as.configEq(make(dict, 0), c.fs)
 
 	as.ok(c.SetServerUrl(TEST_URL))
 
-	as.configEq(keyVal{
+	as.configEq(dict{
 		"server": map[string]string{
 			"url": TEST_URL,
 		},
@@ -205,4 +168,83 @@ func TestConsumeLoadsSpecifiedConfigFileWhenExists(t *testing.T) {
 
 	as.ok(c.Consume(expectedPath))
 	as.eq("http://test-server:8080", c.GetServerUrl())
+}
+
+func TestUnsetRemovesConfiguredValue(t *testing.T) {
+	as := asserts(t)
+	c, err := makeConf(`---
+config_version: 1
+auth:
+  type: basic
+  user: admin
+  password: badger
+server:
+  url: http://test/foo
+`)
+	as.ok(err)
+	as.eq(`http://test/foo`, c.GetServerUrl())
+
+	as.ok(c.Unset(`server-url`))
+	as.eq("", c.GetServerUrl())
+
+	// validate that only server-url was affected
+	as.deepEq(dict{
+		`type`:     `basic`,
+		`user`:     `admin`,
+		`password`: `badger`,
+	}, c.GetAuth())
+
+	// check disk contents for expected structure
+	as.configEq(dict{
+		`config_version`: 1,
+		`auth`: dict{
+			`type`:     `basic`,
+			`user`:     `admin`,
+			`password`: `badger`,
+		},
+	}, c.fs)
+}
+
+func TestUnsetLeavesOverridesOfOtherKeysIntact(t *testing.T) {
+	as := asserts(t)
+	c, err := makeConf(`---
+config_version: 1
+auth:
+  type: basic
+  user: admin
+  password: badger
+server:
+  url: http://test/foo
+`)
+	as.ok(err)
+
+	as.deepEq(dict{
+		`type`:     `basic`,
+		`user`:     `admin`,
+		`password`: `badger`,
+	}, c.GetAuth())
+
+	as.eq(`http://test/foo`, c.GetServerUrl())
+
+	// yes, currently this cannot happen as we do not expose `Set()` directly,
+	// but that may change, and we should validate that there are no side-effects
+	// on unrelated keys.
+	c.native.Set(`server.url`, `http://test/bar`)
+
+	as.eq(`http://test/bar`, c.GetServerUrl())
+	as.ok(c.Unset(`auth`))
+
+	// override value is still honored for this key
+	as.eq(`http://test/bar`, c.GetServerUrl())
+
+	// The original on-disk value of server.url is preserved, which is different
+	// from the override value returned by Get(). We should only persist the
+	// override value if explicitly flush that key to disk, but not as a side-effect
+	// of writing or clearing another key.
+	as.configEq(dict{
+		`config_version`: 1,
+		`server`: dict{
+			`url`: `http://test/foo`,
+		},
+	}, c.fs)
 }

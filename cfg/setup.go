@@ -1,12 +1,11 @@
 package cfg
 
-var CfgFile string
 var conf = NewConfig()
 
 func Conf() *Config {
 	return conf
 }
 
-func Setup() error {
-	return Conf().Consume(CfgFile)
+func Setup(configFile string) (err error) {
+	return Conf().Bootstrap(configFile, migrations)
 }

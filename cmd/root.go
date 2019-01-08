@@ -15,6 +15,8 @@ var rootCmd = &cobra.Command{
 	ValidArgs: []string{"config", "configrepo", "help"}, // bash-completion
 }
 
+var cfgFile string
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -25,13 +27,15 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(func() {
-		if err := cfg.Setup(); err != nil {
+		if err := cfg.Setup(cfgFile); err != nil {
 			utils.AbortLoudly(err)
+		} else {
+			utils.Echofln("Loaded config from: %s", cfg.Conf().ConfigFile())
 		}
 	})
 	rootCmd.AddCommand(config.RootCmd)
 	rootCmd.AddCommand(configrepo.RootCmd)
 
-	rootCmd.PersistentFlags().StringVarP(&cfg.CfgFile, "config", "c", "", "config file (default is $HOME/.gocd/settings.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.gocd/settings.yaml)")
 	rootCmd.PersistentFlags().BoolVarP(&utils.SuppressOutput, "quiet", "q", false, "silence output")
 }
