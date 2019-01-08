@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gocd-contrib/gocd-cli/utils"
-	"github.com/mitchellh/go-homedir"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
 
