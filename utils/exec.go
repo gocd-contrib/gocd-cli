@@ -7,12 +7,22 @@ import (
 	"os/exec"
 )
 
-func ExecQ(cmd *exec.Cmd) bool {
+func Stdout() io.Writer {
 	if !DebugMode && SuppressOutput {
-		return Exec(cmd, os.Stdin, ioutil.Discard, ioutil.Discard)
-	} else {
-		return Exec(cmd, os.Stdin, os.Stdout, os.Stderr)
+		return ioutil.Discard
 	}
+	return os.Stdout
+}
+
+func Stderr() io.Writer {
+	if !DebugMode && SuppressOutput {
+		return ioutil.Discard
+	}
+	return os.Stderr
+}
+
+func ExecQ(cmd *exec.Cmd) bool {
+	return Exec(cmd, os.Stdin, Stdout(), Stderr())
 }
 
 func Exec(cmd *exec.Cmd, pipeIn io.Reader, pipeOut io.Writer, pipeErr io.Writer) bool {

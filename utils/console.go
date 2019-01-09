@@ -10,7 +10,11 @@ var DebugMode bool
 
 func Debug(f string, t ...interface{}) {
 	if DebugMode {
-		fmt.Printf(`[DEBUG] `+f+"\n", t...)
+		if len(t) > 0 {
+			fmt.Printf(`[DEBUG] `+f+"\n", t...)
+		} else {
+			fmt.Println(`[DEBUG] ` + f)
+		}
 	}
 }
 
@@ -18,7 +22,11 @@ func Debug(f string, t ...interface{}) {
 // Uses `printf()` formatting
 func Echof(f string, t ...interface{}) {
 	if DebugMode || !SuppressOutput {
-		fmt.Fprintf(os.Stdout, f, t...)
+		if len(t) > 0 {
+			fmt.Fprintf(os.Stdout, f, t...)
+		} else {
+			fmt.Fprint(os.Stdout, f)
+		}
 	}
 }
 
@@ -30,7 +38,11 @@ func Echofln(f string, t ...interface{}) {
 // Uses `printf()` formatting
 func Errf(f string, t ...interface{}) {
 	if DebugMode || !SuppressOutput {
-		fmt.Fprintf(os.Stderr, f, t...)
+		if len(t) > 0 {
+			fmt.Fprintf(os.Stderr, f, t...)
+		} else {
+			fmt.Fprint(os.Stderr, f)
+		}
 	}
 }
 
@@ -69,9 +81,8 @@ func DieLoudly(exitCode int, f string, t ...interface{}) {
 	}
 
 	os.Exit(exitCode)
-
 }
 
 func AbortLoudly(err error) {
-	DieLoudly(1, "%s\n", err)
+	DieLoudly(1, "%s", err)
 }

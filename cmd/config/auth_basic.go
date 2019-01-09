@@ -11,14 +11,18 @@ var BasicAuthCmd = &cobra.Command{
 	Long:  "This sets the basic authentication credentials for GoCD API requests used by this CLI tool.",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := runBasicAuth(args); err != nil {
-			utils.AbortLoudly(err)
-		}
+		authBasic.Run(args)
 	},
 }
 
-func runBasicAuth(args []string) error {
-	return conf().SetBasicAuth(args[0], args[1])
+var authBasic = &AuthBasicRunner{}
+
+type AuthBasicRunner struct{}
+
+func (su *AuthBasicRunner) Run(args []string) {
+	if err := conf().SetBasicAuth(args[0], args[1]); err != nil {
+		utils.AbortLoudly(err)
+	}
 }
 
 func init() {

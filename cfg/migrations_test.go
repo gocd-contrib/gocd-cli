@@ -119,7 +119,7 @@ foo: bar
 
 	as.not(didRun)
 	as.err(
-		fmt.Sprintf(`%q: %d is not supported in this CLI version`, CONFIG_VERSION, CURRENT_VERSION+1),
+		fmt.Sprintf(`%q: %d is not supported by the configuration file in this CLI version; max supported version: %d`, CONFIG_VERSION, CURRENT_VERSION+1, CURRENT_VERSION),
 		c.Migrate(migs),
 	)
 }

@@ -16,27 +16,31 @@ var FetchCmd = &cobra.Command{
 	Use:   "fetch",
 	Short: "Fetches configrepo plugins",
 	Run: func(cmd *cobra.Command, args []string) {
-		runFetch(args)
+		fetch.Run(args)
 	},
 }
 
-var stableOnly bool
-var filterBy string
+var fetch = &FetchRunner{}
 
-func runFetch(args []string) {
+type FetchRunner struct {
+	StableOnly bool
+	FilterBy   string
+}
+
+func (fr *FetchRunner) Run(args []string) {
 	if "" == PluginId {
 		utils.DieLoudly(1, "You must provide a --plugin-id")
 	}
 
-	if _, err := FetchPlugin(PluginId); err != nil {
+	if _, err := fr.FetchPlugin(PluginId); err != nil {
 		utils.AbortLoudly(err)
 	}
 }
 
-func FetchPlugin(id string) (string, error) {
+func (fr *FetchRunner) FetchPlugin(id string) (string, error) {
 	releases := make([]github.Release, 0)
 
-	if err := dub.New().Get(url(PluginId)).Do(func(res *dub.Response) error {
+	if err := dub.New().Get(fr.releasesURL(PluginId)).Do(func(res *dub.Response) error {
 		payload, err := res.ReadAll()
 
 		if err != nil {
@@ -52,7 +56,7 @@ func FetchPlugin(id string) (string, error) {
 		return "", fmt.Errorf("There are no available releases for %s", id)
 	}
 
-	if a, err := github.ResolveVersionJar(releases, filterBy, stableOnly); err != nil {
+	if a, err := github.ResolveVersionJar(releases, fr.FilterBy, fr.StableOnly); err != nil {
 		return "", err
 	} else {
 		if existing := plugins.PluginById(PluginId, PluginDir); "" != existing {
@@ -70,7 +74,7 @@ func FetchPlugin(id string) (string, error) {
 	}
 }
 
-func url(pluginId string) (releaseUrl string) {
+func (fr *FetchRunner) releasesURL(pluginId string) (releaseUrl string) {
 	if v, ok := plugins.ConfigRepo[PluginId]; ok {
 		releaseUrl = v.Url
 	} else {
@@ -80,7 +84,7 @@ func url(pluginId string) (releaseUrl string) {
 }
 
 func init() {
-	FetchCmd.Flags().BoolVar(&stableOnly, "stable", false, "Restrict to stable (i.e., non-prerelease) releases")
-	FetchCmd.Flags().StringVar(&filterBy, "match-version", "", "Specify a semver exact match, range (e.g., >=1.0.0 <2.0.0 || >=3.0.0 !3.0.1-beta.1), or wildcard (e.g., 0.8.x)")
+	FetchCmd.Flags().BoolVar(&fetch.StableOnly, "stable", false, "Restrict to stable (i.e., non-prerelease) releases")
+	FetchCmd.Flags().StringVar(&fetch.FilterBy, "match-version", "", "Specify a semver exact match, range (e.g., >=1.0.0 <2.0.0 || >=3.0.0 !3.0.1-beta.1), or wildcard (e.g., 0.8.x)")
 	RootCmd.AddCommand(FetchCmd)
 }

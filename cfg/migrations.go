@@ -1,6 +1,10 @@
 package cfg
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gocd-contrib/gocd-cli/utils"
+)
 
 // as the config format evolves, we will need to add config migrations here.
 // each migration is responsible for checking the prerequisite version (and
@@ -33,7 +37,7 @@ type migration struct {
 	body        func(dict) (dict, error)
 }
 
-func from(version int) *migration { //
+func from(version int) *migration {
 	return &migration{fromVersion: version}
 }
 
@@ -48,15 +52,15 @@ func (m *migration) do(name string, body func(dict) (dict, error)) *migration {
 	return m
 }
 
-func (m *migration) needsMigration(schema dict) bool {
+func (m *migration) needsMigration(schema dict) (bool, error) {
 	if _, exists := schema[CONFIG_VERSION]; !exists {
-		return false
+		return false, fmt.Errorf(`Config file is missing %q key`, CONFIG_VERSION)
 	}
 
 	if v, ok := schema[CONFIG_VERSION].(int); !ok {
-		return false
+		return false, fmt.Errorf(`Value for key %q must be numeric; instead, was of type: %T`, CONFIG_VERSION, v)
 	} else {
-		return v == m.fromVersion
+		return v == m.fromVersion, nil
 	}
 }
 
@@ -73,14 +77,23 @@ func (m *migration) run(input dict) (dict, error) {
 		return nil, fmt.Errorf(`Migration %q has no body`, m.name)
 	}
 
-	if !m.needsMigration(input) {
-		return input, nil
+	utils.Debug(`Need to apply migration? => %q`, m.name)
+	if outdated, err := m.needsMigration(input); err != nil {
+		return nil, err
+	} else {
+		if !outdated { // up-to-date, no migration needed
+			utils.Debug(`Config is already at version %d or better; skipping...`, m.toVersion)
+			return input, nil
+		}
 	}
 
+	utils.Debug(`Applying %q...`, m.name)
 	if output, err := m.body(input); err == nil {
 		m.setsVersion(output)
+		utils.Debug(`Successfully applied %q, now at version %d`, m.name, m.toVersion)
 		return output, nil
 	} else {
+		utils.Debug(`Failed to apply %q`, m.name)
 		return nil, err
 	}
 }

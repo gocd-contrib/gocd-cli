@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/gocd-contrib/gocd-cli/utils"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
@@ -113,6 +114,7 @@ func (c *Config) Consume(configFile string) error {
 	} else {
 		switch err.(type) {
 		case viper.ConfigFileNotFoundError:
+			utils.Debug(`No config file found; creating a new one at: %q`, configFile)
 			return c.native.WriteConfigAs(configFile)
 		default:
 			return err
@@ -121,7 +123,10 @@ func (c *Config) Consume(configFile string) error {
 }
 
 func (c *Config) Migrate(migrations []*migration) error {
+	utils.Debug(`Running any necessary config migrations...`)
+
 	if !c.native.InConfig(CONFIG_VERSION) {
+		utils.Debug(`%q is missing in config file; assuming current version`, CONFIG_VERSION)
 		c.ensureCurrentVersion()
 		if err := c.native.WriteConfig(); err != nil {
 			return err
@@ -133,17 +138,21 @@ func (c *Config) Migrate(migrations []*migration) error {
 	}
 
 	if ver := c.native.GetInt(CONFIG_VERSION); ver > CURRENT_VERSION {
-		return fmt.Errorf(`%q: %d is not supported in this CLI version`, CONFIG_VERSION, ver)
+		return fmt.Errorf(`%q: %d is not supported by the configuration file in this CLI version; max supported version: %d`, CONFIG_VERSION, ver, CURRENT_VERSION)
 	} else {
 		if ver != CURRENT_VERSION {
+			utils.Debug(`Config file version is out of date; migrating...`)
+
 			if migratedConf, err := applyMigrations(c.native.AllSettings(), migrations); err == nil {
 				migrated := newViper(c.fs)
 				migrated.SetConfigFile(c.ConfigFile())
 
+				utils.Debug(`Committing changes...`)
 				if err = migrated.MergeConfigMap(migratedConf); err != nil {
 					return err
 				}
 
+				utils.Debug(`Flushing updated config to disk...`)
 				if err = migrated.WriteConfig(); err != nil {
 					return err
 				}
