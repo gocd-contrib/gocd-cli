@@ -30,7 +30,7 @@ func init() {
 		if err := cfg.Setup(cfgFile); err != nil {
 			utils.AbortLoudly(err)
 		} else {
-			utils.Echofln("Loaded config from: %s", cfg.Conf().ConfigFile())
+			utils.Debug("Loaded config from: %s", cfg.Conf().ConfigFile())
 		}
 	})
 	rootCmd.AddCommand(config.RootCmd)
@@ -38,4 +38,5 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.gocd/settings.yaml)")
 	rootCmd.PersistentFlags().BoolVarP(&utils.SuppressOutput, "quiet", "q", false, "silence output")
+	rootCmd.PersistentFlags().BoolVarP(&utils.DebugMode, "debug", "X", false, "debug output; overrides --quiet")
 }

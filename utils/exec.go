@@ -8,7 +8,7 @@ import (
 )
 
 func ExecQ(cmd *exec.Cmd) bool {
-	if SuppressOutput {
+	if !DebugMode && SuppressOutput {
 		return Exec(cmd, os.Stdin, ioutil.Discard, ioutil.Discard)
 	} else {
 		return Exec(cmd, os.Stdin, os.Stdout, os.Stderr)

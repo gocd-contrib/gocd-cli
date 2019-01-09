@@ -6,11 +6,18 @@ import (
 )
 
 var SuppressOutput bool
+var DebugMode bool
+
+func Debug(f string, t ...interface{}) {
+	if DebugMode {
+		fmt.Printf(`[DEBUG] `+f+"\n", t...)
+	}
+}
 
 // Writes to STDOUT unless SuppressOutput is set.
 // Uses `printf()` formatting
 func Echof(f string, t ...interface{}) {
-	if !SuppressOutput {
+	if DebugMode || !SuppressOutput {
 		fmt.Fprintf(os.Stdout, f, t...)
 	}
 }
@@ -22,7 +29,7 @@ func Echofln(f string, t ...interface{}) {
 // Writes to STDERR unless SuppressOutput is set.
 // Uses `printf()` formatting
 func Errf(f string, t ...interface{}) {
-	if !SuppressOutput {
+	if DebugMode || !SuppressOutput {
 		fmt.Fprintf(os.Stderr, f, t...)
 	}
 }
