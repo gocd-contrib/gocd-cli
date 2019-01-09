@@ -59,7 +59,7 @@ func (fr *FetchRunner) FetchPlugin(id string) (string, error) {
 	if a, err := github.ResolveVersionJar(releases, fr.FilterBy, fr.StableOnly); err != nil {
 		return "", err
 	} else {
-		if existing := plugins.PluginById(PluginId, PluginDir); "" != existing {
+		if existing, err := plugins.PluginById(PluginId, PluginDir); err == nil {
 			if utils.IsDir(existing) {
 				utils.Errfln("[WARNING] `%s` is a directory; will not remove this, but please inspect.", existing)
 			}
@@ -67,6 +67,10 @@ func (fr *FetchRunner) FetchPlugin(id string) (string, error) {
 			if utils.IsFile(existing) {
 				utils.Echofln("Removing existing %s plugin %s", PluginId, existing)
 				os.RemoveAll(existing)
+			}
+		} else {
+			if _, isType := err.(*plugins.PluginNotFoundError); !isType {
+				return "", err
 			}
 		}
 
