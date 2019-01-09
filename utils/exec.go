@@ -2,27 +2,12 @@ package utils
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 )
 
-func Stdout() io.Writer {
-	if !DebugMode && SuppressOutput {
-		return ioutil.Discard
-	}
-	return os.Stdout
-}
-
-func Stderr() io.Writer {
-	if !DebugMode && SuppressOutput {
-		return ioutil.Discard
-	}
-	return os.Stderr
-}
-
 func ExecQ(cmd *exec.Cmd) bool {
-	return Exec(cmd, os.Stdin, Stdout(), Stderr())
+	return Exec(cmd, os.Stdin, StdoutOrDevNull(), StderrOrDevNull())
 }
 
 func Exec(cmd *exec.Cmd, pipeIn io.Reader, pipeOut io.Writer, pipeErr io.Writer) bool {
