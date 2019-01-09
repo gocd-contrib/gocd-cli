@@ -83,3 +83,9 @@ $ ./gocd config server-url https://build.gocd.org
 
 $ ./gocd config auth-basic myuser secretpassword
 ```
+
+```
+# Delete auth credentials
+
+$ ./gocd config delete auth
+```
