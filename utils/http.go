@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dustin/go-humanize"
+	humanize "github.com/dustin/go-humanize"
 	"github.com/gocd-contrib/gocd-cli/dub"
 )
 
@@ -51,18 +51,23 @@ func Wget(url string, name string, destFolder string) (filepath string, err erro
 			return err
 		}
 
-		defer file.Close()
+		defer file.Close() // ensure we close the file handle even if we abort early
 
 		if err = res.OnProgress(downloadProgress).Consume(func(body io.Reader) error {
 			w := bufio.NewWriter(file)
 			_, err := io.Copy(w, body)
 
-			if err == nil {
-				err = w.Flush()
+			if err != nil {
+				return err
 			}
 
-			return err
+			return w.Flush()
 		}); err != nil {
+			return err
+		}
+
+		// explicitly close before rename or it may fail during rename
+		if err = file.Close(); err != nil {
 			return err
 		}
 
