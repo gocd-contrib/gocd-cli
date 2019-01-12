@@ -3,20 +3,22 @@ package dub
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 )
 
-type RequestHandler func(*Request) error
+type RawRequestHandler func(*http.Request) error
 type ResponseBodyConsumer func(io.Reader) error
 type ResponseHandler func(*Response) error
 type ProgressHandler func(pr *Progress) error
 
 type Opts struct {
+	Cookies      []*http.Cookie
 	Headers      map[string][]string
 	Auth         AuthSpec
 	ContentType  string
 	OnProgress   []ProgressHandler
-	OnBeforeSend []RequestHandler
+	OnBeforeSend []RawRequestHandler
 }
 
 var methodsCanHaveBody = map[string]struct{}{

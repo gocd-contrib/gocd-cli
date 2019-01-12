@@ -11,16 +11,20 @@ import (
 type Request struct {
 	Url, Method string
 
+	Cookies []*http.Cookie
 	Headers http.Header
 	Body    io.Reader
-	Raw     *http.Request
 
-	onBeforeSend []RequestHandler
+	onBeforeSend []RawRequestHandler
 	onProgress   []ProgressHandler
 	c            *Client
 }
 
 func (r *Request) Opts(opts *Opts) *Request {
+	if len(opts.Cookies) > 0 {
+		r.SetCookies(opts.Cookies)
+	}
+
 	if len(opts.Headers) > 0 {
 		r.SetHeaders(opts.Headers)
 	}
@@ -61,6 +65,16 @@ func (r *Request) SetHeaders(headers map[string][]string) *Request {
 
 func (r *Request) Header(key, value string) *Request {
 	r.ensureHeaders().Add(key, value)
+	return r
+}
+
+func (r *Request) Cookie(cookie *http.Cookie) *Request {
+	r.Cookies = append(r.Cookies, cookie)
+	return r
+}
+
+func (r *Request) SetCookies(cookies []*http.Cookie) *Request {
+	r.Cookies = cookies
 	return r
 }
 
@@ -126,7 +140,7 @@ func (r *Request) DataString(data string) *Request {
 	return r
 }
 
-func (r *Request) BeforeSend(handler RequestHandler) *Request {
+func (r *Request) BeforeSend(handler RawRequestHandler) *Request {
 	r.onBeforeSend = append(r.onBeforeSend, handler)
 	return r
 }
@@ -155,7 +169,6 @@ func (r *Request) Do(onResponse ResponseHandler) error {
 	}
 
 	if req, errRq := http.NewRequest(r.Method, r.Url, body); errRq == nil {
-		r.Raw = req
 
 		if progress != nil {
 			progress.RawRequest = req
@@ -164,9 +177,21 @@ func (r *Request) Do(onResponse ResponseHandler) error {
 		req.Header = r.Headers
 		r.setContentLength(req)
 
+		// Set cookies after header or they will get clobbered when setting other
+		// request headers
+		if len(r.Cookies) > 0 {
+			if 0 == len(req.Header) {
+				req.Header = make(http.Header)
+			}
+
+			for _, ck := range r.Cookies {
+				req.AddCookie(ck)
+			}
+		}
+
 		if len(r.onBeforeSend) > 0 {
 			for _, h := range r.onBeforeSend {
-				if err := h(r); err != nil {
+				if err := h(req); err != nil {
 					return wrapErr(err, "Request.BeforeSend() hook failed")
 				}
 			}

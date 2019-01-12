@@ -15,7 +15,8 @@ func TestRequestConfigByOpts(t *testing.T) {
 
 	c := testCl(func(r *http.Request) (*http.Response, error) {
 		as.eq("http://test", r.URL.String())
-		as.eq(3, len(r.Header))
+		as.eq(2, len(r.Cookies()))
+		as.eq(4, len(r.Header)) // Auth, ContType, X-Foo, Cookie
 		as.eq("Dummy secret", r.Header.Get("Authorization"))
 		as.eq("text/html", r.Header.Get("Content-Type"))
 		as.eq("bar", r.Header.Get("X-Foo"))
@@ -25,13 +26,17 @@ func TestRequestConfigByOpts(t *testing.T) {
 	})
 
 	req := c.Get("http://test").Opts(&Opts{
+		Cookies: []*http.Cookie{
+			&http.Cookie{Name: `foo`, Value: `bar`},
+			&http.Cookie{Name: `baz`, Value: `quu`},
+		},
 		Headers: map[string][]string{
 			"X-Foo": {"bar"},
 		},
 		Auth:         fakeAuth("secret"),
 		ContentType:  "text/html",
 		OnProgress:   []ProgressHandler{func(p *Progress) error { return nil }},
-		OnBeforeSend: []RequestHandler{func(p *Request) error { return nil }},
+		OnBeforeSend: []RawRequestHandler{func(p *http.Request) error { return nil }},
 	})
 
 	as.neq(nil, req)
@@ -40,6 +45,7 @@ func TestRequestConfigByOpts(t *testing.T) {
 	as.eq("Dummy secret", req.Headers.Get("Authorization"))
 	as.eq("text/html", req.Headers.Get("Content-Type"))
 	as.eq("bar", req.Headers.Get("X-Foo"))
+	as.eq(2, len(req.Cookies))
 	as.eq(1, len(req.onProgress))
 	as.eq(1, len(req.onBeforeSend))
 
@@ -93,8 +99,8 @@ func TestRequestBeforeSendAllowsNativeRequestAccess(t *testing.T) {
 	didRun := false
 	var native *http.Request
 
-	as.ok(c.Get("http://test").BeforeSend(func(r *Request) error {
-		native = r.Raw
+	as.ok(c.Get("http://test").BeforeSend(func(r *http.Request) error {
+		native = r
 		didRun = true
 		return nil
 	}).Do(ignoreResponse))
@@ -198,6 +204,31 @@ func TestRequestHeader(t *testing.T) {
 	})
 
 	as.ok(c.Get("http://test").Header("Foo", "Bar").Do(ignoreResponse))
+	as.is(didRun)
+}
+
+func TestRequestCookie(t *testing.T) {
+	as := asserts(t)
+
+	didRun := false
+
+	c := testCl(func(r *http.Request) (*http.Response, error) {
+		as.eq(1, len(r.Cookies()))
+		ck, err := r.Cookie(`cookie-monster`)
+
+		as.ok(err)
+
+		as.neq(nil, ck)
+		as.eq(`cookie-monster=me-want-cookie`, ck.String())
+
+		didRun = true
+		return okResp(), nil
+	})
+
+	as.ok(c.Get("http://test").Cookie(&http.Cookie{
+		Name:  "cookie-monster",
+		Value: "me-want-cookie",
+	}).Do(ignoreResponse))
 	as.is(didRun)
 }
 
