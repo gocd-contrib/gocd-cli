@@ -7,26 +7,9 @@ import (
 	"path"
 	"strings"
 
-	"net"
-	"net/http"
-	"time"
-
 	humanize "github.com/dustin/go-humanize"
 	"github.com/gocd-contrib/gocd-cli/dub"
 )
-
-func Http() *http.Client {
-	tx := &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: 30 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 5 * time.Second,
-	}
-
-	return &http.Client{
-		Transport: tx,
-	}
-}
 
 func downloadProgress(dp *dub.Progress) error {
 	Echof("\r%s", strings.Repeat(" ", 35))
