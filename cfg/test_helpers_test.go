@@ -21,7 +21,8 @@ func writeContent(fs afero.Fs, path, content string) error {
 
 func makeConf(content string) (*Config, error) {
 	fs := afero.NewMemMapFs()
-	v := newViper(fs)
+	c := NewConfig(fs)
+	v := c.native
 
 	if err := writeContent(fs, TEST_CONF_FILE, content); err != nil {
 		return nil, err
@@ -33,14 +34,14 @@ func makeConf(content string) (*Config, error) {
 		}
 	}
 
-	return &Config{native: v, fs: fs}, nil
+	return c, nil
 }
 
 // creates a test Config instance, backed by a memory mapped afero.Fs
 // if create == true, creates an empty config file on the afero.Fs
 func testConf(create bool) *Config {
-	fs := afero.NewMemMapFs()
-	v := newViper(fs)
+	c := NewConfig(afero.NewMemMapFs())
+	v := c.native
 
 	v.AutomaticEnv()
 	v.SetConfigName(CONFIG_FILENAME)
@@ -50,7 +51,7 @@ func testConf(create bool) *Config {
 		v.WriteConfigAs(TEST_CONF_FILE)
 	}
 
-	return &Config{native: v, fs: fs}
+	return c
 }
 
 func serialize(t *testing.T, v interface{}) string {

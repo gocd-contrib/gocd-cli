@@ -1,6 +1,8 @@
 package cfg
 
-var conf = NewConfig()
+import "github.com/spf13/afero"
+
+var conf = NewConfig(afero.NewOsFs())
 
 func Conf() *Config {
 	return conf

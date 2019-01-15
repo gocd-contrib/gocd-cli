@@ -327,8 +327,6 @@ func (c *Config) LayerConfigs() {
 	v.AutomaticEnv() // read in environment variables that match
 }
 
-func NewConfig() *Config {
-	fs := afero.NewOsFs()
-
+func NewConfig(fs afero.Fs) *Config {
 	return &Config{native: newViper(fs), fs: fs}
 }
