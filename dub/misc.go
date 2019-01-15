@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -48,4 +49,16 @@ func (w *wrErr) Error() string {
 
 func wrapErr(cause error, reason string) error {
 	return &wrErr{cause: cause, reason: reason}
+}
+
+func AddQuery(reqUrl string, query map[string][]string) string {
+	if 0 == len(query) {
+		return reqUrl
+	}
+
+	if strings.Contains(reqUrl, `?`) {
+		return reqUrl + `&` + url.Values(query).Encode()
+	}
+
+	return reqUrl + `?` + url.Values(query).Encode()
 }

@@ -44,7 +44,7 @@ func resp(status int, body string) *http.Response {
 func ignoreResponse(res *Response) error {
 	return res.Consume(func(r io.Reader) error {
 		if r != nil {
-			io.Copy(devnull(), r)
+			io.Copy(ioutil.Discard, r)
 		}
 		return nil
 	})
@@ -52,15 +52,6 @@ func ignoreResponse(res *Response) error {
 
 func reqfmt(s ...string) string {
 	return strings.Join(s, "\r\n")
-}
-
-type drain struct{}
-
-func (d *drain) Write(b []byte) (int, error) { return len(b), nil }
-func (d *drain) Close() error                { return nil }
-
-func devnull() io.WriteCloser {
-	return &drain{}
 }
 
 type dummyAuth struct {

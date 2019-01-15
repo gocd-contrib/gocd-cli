@@ -191,6 +191,36 @@ func TestRequestContentType(t *testing.T) {
 	as.is(didRun)
 }
 
+func TestAddQuery(t *testing.T) {
+	as := asserts(t)
+
+	req := &Request{
+		Url: "http://test",
+	}
+
+	req.AddQuery(map[string][]string{
+		`hello`: {`world`, `monde`},
+		`foo`:   {`bar`},
+	})
+
+	as.eq(`http://test?foo=bar&hello=world&hello=monde`, req.Url)
+}
+
+func TestAddQueryToExistingQueryString(t *testing.T) {
+	as := asserts(t)
+
+	req := &Request{
+		Url: "http://test?foo=bar",
+	}
+
+	req.AddQuery(map[string][]string{
+		`hello`: {`world`},
+		`foo`:   {`baz`},
+	})
+
+	as.eq(`http://test?foo=bar&foo=baz&hello=world`, req.Url)
+}
+
 func TestRequestHeader(t *testing.T) {
 	as := asserts(t)
 

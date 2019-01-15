@@ -63,6 +63,11 @@ func (r *Request) SetHeaders(headers map[string][]string) *Request {
 	return r
 }
 
+func (r *Request) AddQuery(query map[string][]string) *Request {
+	r.Url = AddQuery(r.Url, query)
+	return r
+}
+
 func (r *Request) Header(key, value string) *Request {
 	r.ensureHeaders().Add(key, value)
 	return r
