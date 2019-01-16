@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -247,4 +248,29 @@ server:
 			`url`: `http://test/foo`,
 		},
 	}, c.fs)
+}
+
+func TestEnvVariableConfig(t *testing.T) {
+	os.Clearenv()
+
+	defer os.Clearenv()
+
+	as := asserts(t)
+	c := testConf(true)
+
+	c.LayerConfigs()
+
+	as.eq(``, c.GetServerUrl())
+	os.Setenv(`GOCDCLI_SERVER.URL`, `http://from.env`)
+	as.eq(`http://from.env`, c.GetServerUrl())
+
+	as.eq(0, len(c.GetAuth()))
+	os.Setenv(`GOCDCLI_AUTH.TYPE`, `basic`)
+	os.Setenv(`GOCDCLI_AUTH.USER`, `jbond`)
+	os.Setenv(`GOCDCLI_AUTH.PASSWORD`, `007`)
+	as.deepEq(map[string]string{
+		`type`:     `basic`,
+		`user`:     `jbond`,
+		`password`: `007`,
+	}, c.GetAuth())
 }

@@ -70,7 +70,22 @@ func (c *Config) SetBasicAuth(user, pass string) error {
 }
 
 func (c *Config) GetAuth() map[string]string {
-	return c.native.GetStringMapString("auth")
+	authType := c.native.GetString(`auth.type`)
+
+	switch authType {
+	case `basic`:
+		result := map[string]string{
+			`type`: authType,
+		}
+		// favor accessing individual nested keys so we honor
+		// environment variable overrides with Viper (i.e.,
+		// GOCDCLI_AUTH.* environment variables)
+		setIfPresent(result, `auth.user`, `user`, c.native)
+		setIfPresent(result, `auth.password`, `password`, c.native)
+		return result
+	default:
+		return c.native.GetStringMapString(`auth`)
+	}
 }
 
 func (c *Config) ConfigFile() string {
@@ -278,6 +293,12 @@ func (c *Config) fsOnlyViper(fs afero.Fs) (*viper.Viper, error) {
 		return nil, err
 	}
 	return v, nil
+}
+
+func setIfPresent(result map[string]string, srcKey, destKey string, v *viper.Viper) {
+	if val := v.GetString(srcKey); `` != val {
+		result[destKey] = val
+	}
 }
 
 /**
