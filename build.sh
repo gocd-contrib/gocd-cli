@@ -3,7 +3,7 @@
 set -e
 
 rm -f gocd gocd.exe
-rm -rf build
+rm -rf dist
 
 RELEASE="UNSPECIFIED"
 
@@ -69,7 +69,7 @@ if [[ "true" = "$multiplatform" ]]; then
   echo "Release: $RELEASE, Revision: $GIT_COMMIT"
 
   for plt in "${platforms[@]}"; do
-    mkdir -p "build/$plt"
+    mkdir -p "dist/$plt"
     arr=(${plt//\// })
     _os="${arr[0]}"
     _arch="${arr[1]}"
@@ -82,7 +82,7 @@ if [[ "true" = "$multiplatform" ]]; then
     echo "Building $plt..."
 
     GOOS="${_os}" GOARCH="${_arch}" go build \
-      -o "build/${plt}/${name}" \
+      -o "dist/${plt}/${name}" \
       -ldflags "-X main.Version=$RELEASE -X main.GitCommit=$GIT_COMMIT -X main.Platform=$_arch-$_os" \
       main.go
   done
