@@ -12,7 +12,7 @@ type CrError struct {
 }
 
 func (cr *CrError) HumanFormat() string {
-	return fmt.Sprintf("%s:\n  %s", cr.File, cr.Msg)
+	return fmt.Sprintf("%s:\n  - %s", cr.File, cr.Msg)
 }
 
 type CrResponse struct {
