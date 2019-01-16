@@ -10,10 +10,14 @@ pipelines:
     stages:
       - build:
           elastic_profile_id: ecs-golang-build
+          artifacts:
+            - build:
+                source: build/**
+                destination: dist/
           tasks:
           - exec:
               command: /bin/bash
-              args:
+              arguments:
                 - build.sh
                 - --verbose
                 - --prod
