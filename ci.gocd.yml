@@ -1,0 +1,19 @@
+---
+format_version: 3
+pipelines:
+  gocd-cli:
+    group: go-cd-contrib
+    materials:
+      github:
+        git: https://github.com/gocd-contrib/gocd-cli
+
+    stages:
+      - build:
+          elastic_profile_id: ecs-golang-build
+          tasks:
+          - exec:
+              command: /bin/bash
+              args:
+                - build.sh
+                - --verbose
+                - --prod
