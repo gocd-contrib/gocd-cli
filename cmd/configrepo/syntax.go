@@ -50,8 +50,7 @@ func (sr *SyntaxRunner) Run(args []string) {
 		stderr := &strings.Builder{}
 
 		if success = utils.Exec(cmd, os.Stdin, stdout, stderr); success {
-			// should really make plugins print machine-readable stdoutput instead of "OK"
-			utils.Echofln(stdout.String())
+			utils.Echofln(`OK`)
 		} else {
 			resp := api.CrResponse{}
 
@@ -70,5 +69,5 @@ func (sr *SyntaxRunner) Run(args []string) {
 
 func init() {
 	RootCmd.AddCommand(SyntaxCmd)
-	SyntaxCmd.Flags().BoolVar(&syntax.Raw, "json", false, "machine-readable output (JSON)")
+	SyntaxCmd.Flags().BoolVar(&syntax.Raw, "raw", false, "machine-readable output (JSON)")
 }
