@@ -20,4 +20,4 @@ pipelines:
                 - build.sh
                 - --verbose
                 - --prod
-                - --release=Edge-${GO_PIPELINE_COUNTER:-dev}
+                - --release=Edge
