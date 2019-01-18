@@ -74,8 +74,10 @@ Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0
 
 ```
 # Save GoCD server base URL for API calls
+# The base URL is the URL up through the context path,
+# which defaults to `/go` unless configured otherwise
 
-$ ./gocd config server-url https://build.gocd.org
+$ ./gocd config server-url https://build.gocd.org/go
 ```
 
 ```
