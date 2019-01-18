@@ -83,7 +83,7 @@ func (pr *PreflightRunner) url() string {
 		query.Add(`repoId`, pr.RepoId)
 	}
 
-	return dub.AddQuery(`/go/api/admin/config_repo_ops/preflight`, query)
+	return dub.AddQuery(`/api/admin/config_repo_ops/preflight`, query)
 }
 
 func ParseCrPreflight(body []byte) (*api.CrPreflightResponse, error) {
