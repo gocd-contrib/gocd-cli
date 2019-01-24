@@ -23,44 +23,49 @@ $ ./gocd configrepo -i json.config.plugin fetch # saves to $HOME/.gocd/plugins
 
 ## Usage
 
-There are built-in help screens to the `gocd` binary if you pass in `-h` or invoke with no arguments at all. Will expand later on this.
+There are built-in help screens to the `gocd` binary if you pass in `-h` or invoke with no arguments at all.
 
 ### Example: Do a syntax check on a config-repo definition file
 
 ```
-# `-i` specifies the plugin id; in this case, `yaml.config.plugin` is the YAML Config Repo Plugin's identifier.
-# Use json.config.plugin for the JSON Config Repo Plugin
+# required flag plugin id (--yaml or --json alias or -i 'other.plugin.id')
 
 $ ./gocd configrepo -i yaml.config.plugin syntax my-pipeline.gocd.yaml
 OK
 ```
 
+### Example: Do a preflight check on a config-repo definition file
+
+```
+# required flag plugin id (--yaml or --json alias or -i 'other.plugin.id')
+# optional flag --repo-id 'repo-id' or -r 'repo-id'
+# required argument(s) filename(s)
+
+$ ./gocd configrepo --yaml preflight my-pipeline.gocd.yaml
+OK
+```
+
+
 ### Example: Fetch a config-repo plugin
 
 ```
-# `-i` specifies the plugin id; in this case, `yaml.config.plugin` is the YAML Config Repo Plugin's identifier.
-# Use json.config.plugin for the JSON Config Repo Plugin
+# required flag plugin id (--yaml or --json alias or -i 'other.plugin.id')
+# optional flag --match-version (omitting will fetch the latest)
 
 $ ./gocd configrepo -i yaml.config.plugin fetch
 Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.8.3/yaml-config-plugin-0.8.3.jar
   Fetched 2.3 MB/2.3 MB (100.0%) complete
 ```
 
-### Example: Fetch a specific version of a config-repo plugin
+### Example: Fetch a config-repo plugin matching a version or version range
 
 ```
-$ ./gocd configrepo -i yaml.config.plugin fetch --match-version 0.7.0
-Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.7.0/yaml-config-plugin-0.7.0.jar
-  Fetched 2.0 MB/2.0 MB (100.0%) complete
-```
-
-### Example: Fetch a config-repo plugin matching a version range
-
-```
-# the `--match-version` flag accepts a semver (semantic version) query or range string
+# required flag plugin id (--yaml or --json alias or -i 'other.plugin.id')
+# optional flag `--match-version` accepts a semver (semantic version) query or range string
 #
 # Examples:
 #
+# --match-version 0.7.0 will fetch specified release 0.7.0
 # --match-version '>=0.5.0 <0.8.0' # simple range; will resolve to 0.7.0
 # --match-version '>=0.5.0 <0.8.0 || >=0.8.1 !0.8.3' # compound range; will resolve to 0.8.2
 # --match-version '0.8.x' # wildcard, will match latest 0.8.x release
