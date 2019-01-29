@@ -128,6 +128,9 @@ Alternatively the settings can be configured or overridden using environment var
 ```
 # required variables GOCDCLI_AUTH.TYPE, GOCDCLI_AUTH.USER, GOCDCLI_AUTH.PASSWORD
 
-$ env "GOCDCLI_AUTH.TYPE=basic" env "GOCDCLI_AUTH.USER=myuser" env "GOCDCLI_AUTH.PASSWORD=mypassword" ./gocd configrepo --yaml preflight my-pipeline.gocd.yaml
+$ env "GOCDCLI_AUTH.TYPE=basic" 
+> env "GOCDCLI_AUTH.USER=myuser" 
+> env "GOCDCLI_AUTH.PASSWORD=mypassword" 
+> ./gocd configrepo --yaml preflight my-pipeline.gocd.yaml
 OK
 ```
