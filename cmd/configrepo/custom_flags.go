@@ -62,10 +62,44 @@ func (f *yamlFlag) IsBoolFlag() bool {
 	return true
 }
 
+type groovyFlag bool
+
+func (f *groovyFlag) Type() string {
+	return `bool`
+}
+
+func (f *groovyFlag) String() string {
+	return strconv.FormatBool(bool(*f))
+}
+
+func (f *groovyFlag) Set(value string) error {
+	b, err := strconv.ParseBool(value)
+
+	if err != nil {
+		return err
+	}
+
+	*f = groovyFlag(b)
+
+	if b {
+		RootCmd.PersistentFlags().Set(`plugin-id`, `cd.go.contrib.plugins.configrepo.groovy`)
+	}
+
+	return nil
+}
+
+func (f *groovyFlag) IsBoolFlag() bool {
+	return true
+}
+
 func newJsonFlag(b bool) *jsonFlag {
 	return (*jsonFlag)(&b)
 }
 
 func newYamlFlag(b bool) *yamlFlag {
 	return (*yamlFlag)(&b)
+}
+
+func newGroovyFlag(b bool) *groovyFlag {
+	return (*groovyFlag)(&b)
 }

@@ -30,6 +30,7 @@ func init() {
 	// Alias flags for --plugin-id
 	RootCmd.PersistentFlags().VarPF(newJsonFlag(false), "json", "", "Alias for '--plugin-id json.config.plugin'").NoOptDefVal = `true`
 	RootCmd.PersistentFlags().VarPF(newYamlFlag(false), "yaml", "", "Alias for '--plugin-id yaml.config.plugin'").NoOptDefVal = `true`
+	RootCmd.PersistentFlags().VarPF(newGroovyFlag(false), "groovy", "", "Alias for '--plugin-id cd.go.contrib.plugins.configrepo.groovy'").NoOptDefVal = `true`
 
 	if PluginDir == "" {
 		if d, err := homedir.Dir(); err == nil {
