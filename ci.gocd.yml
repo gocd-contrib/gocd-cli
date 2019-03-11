@@ -5,7 +5,7 @@ pipelines:
     group: go-cd-contrib
     materials:
       github:
-        git: https://github.com/gocd-contrib/gocd-cli
+        git: https://git.gocd.io/git/gocd-contrib/gocd-cli
 
     stages:
       - build:
