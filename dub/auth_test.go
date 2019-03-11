@@ -19,3 +19,11 @@ func TestBasicAuth(t *testing.T) {
 		t.Errorf("BasicAuth should output auth type with base64 payload")
 	}
 }
+
+func TestTokenAuth(t *testing.T) {
+	a := NewTokenAuth("abc123")
+
+	if "Bearer abc123" != a.Token() {
+		t.Errorf("TokenAuth should output auth type token payload")
+	}
+}

@@ -63,9 +63,23 @@ func (c *Config) SetBasicAuth(user, pass string) error {
 		return errors.New("Must specify user and password")
 	}
 
+	c.native.Set("auth", nil)
 	c.native.Set("auth.type", "basic")
 	c.native.Set("auth.user", user)
 	c.native.Set("auth.password", pass)
+
+	return c.native.WriteConfig()
+}
+
+func (c *Config) SetTokenAuth(token string) error {
+	if "" == token {
+		return errors.New("Must specify bearer token")
+	}
+
+	c.native.Set("auth", nil)
+	c.native.Set("auth.type", "token")
+	c.native.Set("auth.token", token)
+
 	return c.native.WriteConfig()
 }
 
@@ -82,6 +96,12 @@ func (c *Config) GetAuth() map[string]string {
 		// GOCDCLI_AUTH.* environment variables)
 		setIfPresent(result, `auth.user`, `user`, c.native)
 		setIfPresent(result, `auth.password`, `password`, c.native)
+		return result
+	case `token`:
+		result := map[string]string{
+			`type`: authType,
+		}
+		setIfPresent(result, `auth.token`, `token`, c.native)
 		return result
 	default:
 		return c.native.GetStringMapString(`auth`)

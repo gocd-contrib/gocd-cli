@@ -86,6 +86,12 @@ func (b *Builder) Auth() (dub.AuthSpec, error) {
 		}
 
 		return dub.NewBasicAuth(auth[`user`], auth[`password`]), nil
+	case `token`:
+		if err := checkAuth(auth, `token`); err != nil {
+			return nil, err
+		}
+
+		return dub.NewTokenAuth(auth[`token`]), nil
 	default:
 		return nil, fmt.Errorf(`Unknown authentication scheme: %q`, auth[`type`])
 	}

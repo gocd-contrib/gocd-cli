@@ -46,7 +46,76 @@ func TestSetBasicAuth(t *testing.T) {
 	}, c.fs)
 }
 
-func TestSetBasicAuthShouldValidatePrescenseOfUserAndPassword(t *testing.T) {
+func TestGetTokenAuth(t *testing.T) {
+	as := asserts(t)
+	c := testConf(true)
+
+	c.native.Set("auth.type", "token")
+	c.native.Set("auth.token", "hello!")
+	c.native.WriteConfig()
+
+	as.deepEq(map[string]string{
+		"type":  "token",
+		"token": "hello!",
+	}, c.GetAuth())
+}
+
+func TestSetTokenAuth(t *testing.T) {
+	as := asserts(t)
+	c := testConf(true)
+
+	as.configEq(make(dict, 0), c.fs)
+
+	as.ok(c.SetTokenAuth(`gah!`))
+
+	as.configEq(dict{
+		"auth": map[string]string{
+			"type":  "token",
+			"token": "gah!",
+		},
+	}, c.fs)
+}
+
+func TestSettingAuthClearsPreviousSetting(t *testing.T) {
+	as := asserts(t)
+	c := testConf(true)
+	c.native.Set("auth.type", "basic")
+	c.native.Set("auth.user", TEST_USER)
+	c.native.Set("auth.password", TEST_PASSWORD)
+	c.native.WriteConfig()
+
+	as.deepEq(map[string]string{
+		"type":     "basic",
+		"user":     TEST_USER,
+		"password": TEST_PASSWORD,
+	}, c.GetAuth())
+
+	as.configEq(dict{
+		"auth": map[string]string{
+			"type":     "basic",
+			"user":     TEST_USER,
+			"password": TEST_PASSWORD,
+		},
+	}, c.fs)
+
+	as.ok(c.SetTokenAuth(`gah!`))
+
+	as.deepEq(map[string]string{
+		"type":  "token",
+		"token": "gah!",
+	}, c.GetAuth())
+
+	as.configEq(dict{
+		"auth": map[string]string{
+			"type":  "token",
+			"token": "gah!",
+		},
+	}, c.fs)
+
+	as.eq(nil, c.native.Get("auth.password"))
+}
+
+func TestSetBasicAuthShouldValidatePresenceOfUserAndPassword(t *testing.T) {
 	as := asserts(t)
 	c := testConf(true)
 

@@ -23,3 +23,15 @@ func (b *BasicAuth) payload() []byte {
 func NewBasicAuth(user, pass string) AuthSpec {
 	return &BasicAuth{User: user, Pass: pass}
 }
+
+type TokenAuth struct {
+	BearerToken string
+}
+
+func (t *TokenAuth) Token() string {
+	return `Bearer ` + t.BearerToken
+}
+
+func NewTokenAuth(token string) AuthSpec {
+	return &TokenAuth{BearerToken: token}
+}
