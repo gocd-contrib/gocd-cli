@@ -14,6 +14,10 @@ type Response struct {
 	onProgress []ProgressHandler
 }
 
+func (r *Response) IsAuthError() bool {
+	return r.Status == 401
+}
+
 func (r *Response) IsError() bool {
 	return r.Status >= 400
 }
