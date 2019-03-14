@@ -2,6 +2,7 @@ package configrepo
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -48,12 +49,12 @@ func (pr *PreflightRunner) handleApiResponse(res *dub.Response) error {
 			return err
 		} else {
 			if res.IsAuthError() {
-				utils.Die(1, `Invalid credentials. Either the username or password configured is incorrect`)
+				utils.DieLoudly(1, `Invalid credentials. Either the username or password configured is incorrect`)
 			}
 
 			if res.IsError() {
 				if msg, err := api.ParseMessage(b); err == nil {
-					utils.Die(1, `Unexpected response: %s`, msg)
+					return fmt.Errorf(`Unexpected response: %s`, msg)
 				} else {
 					return err
 				}
