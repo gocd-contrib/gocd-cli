@@ -32,12 +32,7 @@ func (sr *SyntaxRunner) Run(args []string) {
 		utils.DieLoudly(1, "You must provide a --plugin-id")
 	}
 
-	if found, err := plugins.PluginById(PluginId, PluginDir); err != nil {
-		utils.AbortLoudly(err)
-	} else {
-		PluginJar = found
-	}
-
+	sr.FindPluginJar()
 	cmdArgs := append([]string{"-jar", PluginJar, "syntax"}, args...)
 	cmd := exec.Command("java", cmdArgs...)
 
@@ -64,6 +59,20 @@ func (sr *SyntaxRunner) Run(args []string) {
 
 	if !success {
 		os.Exit(1)
+	}
+}
+
+func (sr *SyntaxRunner) FindPluginJar() {
+	if found, err := plugins.PluginById(PluginId, PluginDir); err != nil {
+		utils.Echofln("%s", err)
+		utils.Echofln("Attempting to fetch the plugin:")
+		if found, err := fetch.FetchPlugin(PluginId); err != nil {
+			utils.AbortLoudly(err)
+		} else {
+			PluginJar = found
+		}
+	} else {
+		PluginJar = found
 	}
 }
 
