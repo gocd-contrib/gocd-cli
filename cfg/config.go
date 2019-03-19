@@ -32,6 +32,7 @@ type Config struct {
 }
 
 var onlyNumeric, _ = regexp.Compile(`^\d+$`)
+var goURI, _ = regexp.Compile(`\/(\w+\/)*go\/?$`)
 
 func (c *Config) SetServerUrl(urlArg string) error {
 	if "" == urlArg {
@@ -47,6 +48,10 @@ func (c *Config) SetServerUrl(urlArg string) error {
 
 		if u.Port() != "" && !onlyNumeric.MatchString(u.Port()) {
 			return errors.New("Port must be numeric")
+		}
+
+		if u.RequestURI() != "" && !goURI.MatchString(u.RequestURI()) {
+			return errors.New("URL must end with '/go'")
 		}
 
 		c.native.Set("server.url", u.String())

@@ -10,7 +10,7 @@ import (
 )
 
 const TEST_CONF_FILE = CONFIG_FILENAME + "." + CONFIG_FILETYPE
-const TEST_URL = "http://localhost:1234/go/test"
+const TEST_URL = "http://localhost:1234/test/go"
 const TEST_USER = "admin"
 const TEST_PASSWORD = "badger"
 
@@ -157,6 +157,8 @@ func TestSetServerURLValidatesURL(t *testing.T) {
 	as.err("URL must include protocol and hostname", c.SetServerUrl("foo.bar"))
 	as.err("URL must include protocol and hostname", c.SetServerUrl("http://"))
 	as.err("Port must be numeric", c.SetServerUrl("http://localhost:foo/bar"))
+	as.err("URL must end with '/go'", c.SetServerUrl("http://localhost:555/go/bar"))
+	as.err("URL must end with '/go'", c.SetServerUrl("http://localhost:555/eek/barba/durkle"))
 	as.eq("", c.GetServerUrl())
 }
 

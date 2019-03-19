@@ -126,7 +126,7 @@ func TestIntegrationUpdateMethodsHaveConfirmHeaderUponConfig(t *testing.T) {
 	as := asserts(t)
 
 	c := testConf()
-	as.ok(c.SetServerUrl(`http://test`))
+	as.ok(c.SetServerUrl(`http://test/go/`))
 	as.ok(c.SetBasicAuth(`foo`, `bar`))
 
 	v := testApi(999, c)
