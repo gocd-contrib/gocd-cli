@@ -56,6 +56,10 @@ func (b *Builder) AddConfirmHeaderIfBodyNil(onCreate []CreateHook) []CreateHook 
 	})
 }
 
+func (b *Builder) Validate() error {
+	return b.conf.WithBaseUrlValidation(b.conf.GetServerUrl(), nil)
+}
+
 func (b *Builder) Url(path string) string {
 	return b.conf.GetServerUrl() + path
 }

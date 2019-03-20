@@ -38,28 +38,40 @@ func (c *Config) SetServerUrl(urlArg string) error {
 		return errors.New("Must specify a url")
 	}
 
-	if u, err := url.Parse(urlArg); err != nil {
-		return err
-	} else {
-		if !u.IsAbs() || u.Hostname() == "" {
-			return errors.New("URL must include protocol and hostname")
-		}
-
-		if u.Port() != "" && !onlyNumeric.MatchString(u.Port()) {
-			return errors.New("Port must be numeric")
-		}
-
-		if !strings.HasSuffix(u.Path, `/go`) {
-			return errors.New(`URL must end with /go`)
-		}
-
-		c.native.Set("server.url", u.String())
-		return c.native.WriteConfig()
-	}
+	return utils.InspectError(
+		c.WithBaseUrlValidation(urlArg, func(u string) error {
+			c.native.Set("server.url", u)
+			return utils.InspectError(c.native.WriteConfig(), `writing server-url to config`)
+		}), `validating server-url on set() => %q`, urlArg,
+	)
 }
 
 func (c *Config) GetServerUrl() string {
 	return c.native.GetString("server.url")
+}
+
+func (c *Config) WithBaseUrlValidation(urlArg string, onValid func(string) error) error {
+	if u, err := url.Parse(urlArg); err != nil {
+		return utils.InspectError(err, `parsing base url %q`, urlArg)
+	} else {
+		if !u.IsAbs() || u.Hostname() == "" {
+			return errors.New("server-url must include protocol and hostname")
+		}
+
+		if u.Port() != "" && !onlyNumeric.MatchString(u.Port()) {
+			return errors.New("server-url port must be numeric")
+		}
+
+		if !strings.HasSuffix(u.Path, `/go`) {
+			return errors.New(`server-url must end with /go`)
+		}
+
+		if onValid == nil {
+			return nil
+		}
+
+		return utils.InspectError(onValid(u.String()), `running onValid() hook for %q`, u.String())
+	}
 }
 
 func (c *Config) SetBasicAuth(user, pass string) error {
@@ -72,7 +84,7 @@ func (c *Config) SetBasicAuth(user, pass string) error {
 	c.native.Set("auth.user", user)
 	c.native.Set("auth.password", pass)
 
-	return c.native.WriteConfig()
+	return utils.InspectError(c.native.WriteConfig(), `writing basic auth credentials to config`)
 }
 
 func (c *Config) SetTokenAuth(token string) error {
@@ -84,7 +96,7 @@ func (c *Config) SetTokenAuth(token string) error {
 	c.native.Set("auth.type", "token")
 	c.native.Set("auth.token", token)
 
-	return c.native.WriteConfig()
+	return utils.InspectError(c.native.WriteConfig(), `writing auth token to config`)
 }
 
 func (c *Config) GetAuth() map[string]string {
@@ -116,31 +128,35 @@ func (c *Config) ConfigFile() string {
 	return c.native.ConfigFileUsed()
 }
 
-func (c *Config) Bootstrap(configFile string, migrations []*migration) (err error) {
-	if err = c.Consume(configFile); err == nil {
+func (c *Config) Bootstrap(configFile string, migrations []*migration) error {
+	if err := c.Consume(configFile); err == nil {
 		if err = c.Migrate(migrations); err == nil {
 			c.LayerConfigs()
+			return nil
+		} else {
+			return utils.InspectError(err, `migrating config file schema %q`, configFile)
 		}
+	} else {
+		return utils.InspectError(err, `consuming config file %q`, configFile)
 	}
-	return
 }
 
 func (c *Config) Consume(configFile string) error {
 	if configFile != "" {
 		// Use config file from the flag.
 		c.native.SetConfigFile(configFile)
-		return c.native.ReadInConfig()
+		return utils.InspectError(c.native.ReadInConfig(), `reading specified config file at %q`, configFile)
 	}
 	// Find home directory.
 	home, err := homedir.Dir()
 	if err != nil {
-		return err
+		return utils.InspectError(err, `resolving user's home directory`)
 	}
 
 	cfgDir := filepath.Join(home, CONFIG_DIRNAME)
 
 	if err = c.fs.MkdirAll(cfgDir, os.ModePerm); err != nil {
-		return err
+		return utils.InspectError(err, `creating directory %q`, cfgDir)
 	}
 
 	c.native.AddConfigPath(cfgDir)
@@ -154,9 +170,9 @@ func (c *Config) Consume(configFile string) error {
 		switch err.(type) {
 		case viper.ConfigFileNotFoundError:
 			utils.Debug(`No config file found; creating a new one at: %q`, configFile)
-			return c.native.WriteConfigAs(configFile)
+			return utils.InspectError(c.native.WriteConfigAs(configFile), `creating a new config file at: %q`, configFile)
 		default:
-			return err
+			return utils.InspectError(err, `reading config file at default location %q`, configFile)
 		}
 	}
 }
@@ -168,7 +184,7 @@ func (c *Config) Migrate(migrations []*migration) error {
 		utils.Debug(`%q is missing in config file; assuming current version`, CONFIG_VERSION)
 		c.ensureCurrentVersion()
 		if err := c.native.WriteConfig(); err != nil {
-			return err
+			return utils.InspectError(err, `setting config file version`)
 		}
 	}
 
@@ -188,15 +204,15 @@ func (c *Config) Migrate(migrations []*migration) error {
 
 				utils.Debug(`Committing changes...`)
 				if err = migrated.MergeConfigMap(migratedConf); err != nil {
-					return err
+					return utils.InspectError(err, `merging final configuration`)
 				}
 
 				utils.Debug(`Flushing updated config to disk...`)
 				if err = migrated.WriteConfig(); err != nil {
-					return err
+					return utils.InspectError(err, `writing back migrated configurations`)
 				}
 			} else {
-				return err
+				return utils.InspectError(err, `applying migrations`)
 			}
 		}
 	}

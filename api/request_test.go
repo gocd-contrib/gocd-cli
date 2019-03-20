@@ -12,13 +12,15 @@ func TestRequestValidateUrl(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
-		Raw: testDub().Get(`http://test`),
+		Raw:        testDub().Get(`http://test`),
+		Configurer: &testConfigurer{},
 	}
 
 	as.ok(req.ValidateUrl())
 
 	req = &api.Req{
-		Raw: testDub().Get(`/foo/bar`),
+		Raw:        testDub().Get(`/foo/bar`),
+		Configurer: &testConfigurer{},
 	}
 
 	as.err("API URL is not absolute; make sure you have configured `server-url`", req.ValidateUrl())

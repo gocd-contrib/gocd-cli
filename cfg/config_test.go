@@ -154,10 +154,10 @@ func TestSetServerURLValidatesURL(t *testing.T) {
 	c := testConf(true)
 
 	as.err("Must specify a url", c.SetServerUrl(""))
-	as.err("URL must include protocol and hostname", c.SetServerUrl("foo.bar"))
-	as.err("URL must include protocol and hostname", c.SetServerUrl("http://"))
-	as.err("Port must be numeric", c.SetServerUrl("http://localhost:foo/bar"))
-	as.err("URL must end with /go", c.SetServerUrl("http://localhost:8080/bar"))
+	as.err("server-url must include protocol and hostname", c.SetServerUrl("foo.bar"))
+	as.err("server-url must include protocol and hostname", c.SetServerUrl("http://"))
+	as.err("server-url port must be numeric", c.SetServerUrl("http://localhost:foo/bar"))
+	as.err("server-url must end with /go", c.SetServerUrl("http://localhost:8080/bar"))
 	as.eq("", c.GetServerUrl())
 }
 

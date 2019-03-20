@@ -12,6 +12,7 @@ import (
 type RequestConfigurer interface {
 	AcceptHeader() string
 	Auth() (dub.AuthSpec, error)
+	Validate() error
 }
 
 type CreateHook func(*dub.Request) error
@@ -31,6 +32,10 @@ func (r *Req) Send(onResponse func(*dub.Response) error) error {
 }
 
 func (r *Req) ValidateUrl() error {
+	if err := r.Configurer.Validate(); err != nil {
+		return utils.InspectError(err, `validating API request builder configuration`)
+	}
+
 	if u, err := url.Parse(r.Raw.Url); err == nil {
 		if "" == u.Scheme || "" == u.Host {
 			return errors.New("API URL is not absolute; make sure you have configured `server-url`")

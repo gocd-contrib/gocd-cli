@@ -92,6 +92,10 @@ func (d *dummyAuth) Token() string {
 
 type testConfigurer struct{}
 
+func (tc *testConfigurer) Validate() error {
+	return nil
+}
+
 func (tc *testConfigurer) AcceptHeader() string {
 	return `accept/me`
 }
