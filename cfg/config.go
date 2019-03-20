@@ -49,6 +49,10 @@ func (c *Config) SetServerUrl(urlArg string) error {
 			return errors.New("Port must be numeric")
 		}
 
+		if !strings.HasSuffix(u.Path, `/go`) {
+			return errors.New(`URL must end with /go`)
+		}
+
 		c.native.Set("server.url", u.String())
 		return c.native.WriteConfig()
 	}
