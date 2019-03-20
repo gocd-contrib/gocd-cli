@@ -2,10 +2,14 @@
 
 set -e
 
-rm -f gocd gocd.exe
+cd "$(dirname "$0")"
+
+PROGNAME="gocd"
+
+rm -f "$PROGNAME"
 rm -rf dist
 
-RELEASE="UNSPECIFIED"
+RELEASE="X.x.x"
 
 for arg in $@; do
   case $arg in
@@ -35,11 +39,17 @@ for arg in $@; do
   esac
 done
 
+RELEASE="${RELEASE}-${GO_PIPELINE_LABEL:-localbuild}"
+
+function ldflags {
+  local _os="${1:-$(go env GOOS)}"
+  local _arch="${2:-$(go env GOARCH)}"
+
+  echo "-X main.Version=${RELEASE} -X main.GitCommit=${GIT_COMMIT} -X main.Platform=${_arch}-${_os}"
+}
+
 echo "Fetching dependencies"
 go get -d $extra_flags ./...
-
-echo "Fetching any windows-specific dependencies"
-GOOS="windows" go get -d $extra_flags ./... # get any windows-specific deps as well
 
 if [[ "true" = "$skip" ]]; then
   echo "Skipping tests"
@@ -69,29 +79,25 @@ if [[ "true" = "$multiplatform" ]]; then
   echo "Release: $RELEASE, Revision: $GIT_COMMIT"
 
   for plt in "${platforms[@]}"; do
-    mkdir -p "dist/$plt"
+    mkdir -p "dist/${plt}"
     arr=(${plt//\// })
     _os="${arr[0]}"
     _arch="${arr[1]}"
-    name="gocd"
+    name="$PROGNAME"
 
-    if [[ "windows" = "${_os}" ]]; then
+    if [ "windows" = "${_os}" ]; then
       name="$name.exe"
     fi
 
     echo "Building $plt..."
 
+    GOOS="${_os}" go get -d $extra_flags ./...
     GOOS="${_os}" GOARCH="${_arch}" go build \
       -o "dist/${plt}/${name}" \
-      -ldflags "-X main.Version=$RELEASE -X main.GitCommit=$GIT_COMMIT -X main.Platform=$_arch-$_os" \
-      main.go
+      -ldflags "$(ldflags "$_os" "$_arch")"
   done
 else
-  _arch=$(go env GOARCH)
-  _os=$(go env GOOS)
-
   go build \
-    -ldflags "-X main.Version=X.x.x-devbuild -X main.GitCommit=$GIT_COMMIT -X main.Platform=$_arch-$_os" \
-    -o gocd \
-    main.go
+    -ldflags "$(ldflags)" \
+    -o "$PROGNAME"
 fi
