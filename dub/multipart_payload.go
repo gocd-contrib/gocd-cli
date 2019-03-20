@@ -121,6 +121,7 @@ func (p *pipedPayload) DoAssemble(w *multipart.Writer, parts []Part) error {
 		p.asmErrCh = make(chan error, 1)
 
 		go func(ec chan<- error) {
+			defer func() { close(ec) }()
 			defer p.pw.Close()
 
 			if len(parts) > 0 {
@@ -128,7 +129,6 @@ func (p *pipedPayload) DoAssemble(w *multipart.Writer, parts []Part) error {
 					if err := p.Build(w); err != nil {
 						ec <- err
 
-						close(ec)
 						return
 					}
 				}
@@ -137,12 +137,10 @@ func (p *pipedPayload) DoAssemble(w *multipart.Writer, parts []Part) error {
 			if err := w.Close(); err != nil {
 				ec <- err
 
-				close(ec)
 				return
 			}
 
 			ec <- nil
-			close(ec)
 		}(p.asmErrCh)
 
 		p.ready = true
