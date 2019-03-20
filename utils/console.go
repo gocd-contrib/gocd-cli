@@ -8,6 +8,21 @@ import (
 var SuppressOutput bool
 var DebugMode bool
 
+// Chainable/pass-thru error debug logger
+func InspectError(err error, label string, t ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	if len(t) > 0 {
+		label = fmt.Sprintf(label, t...)
+	}
+
+	Debug("While [%s], caught error:\n  -> %q", label, err.Error())
+
+	return err
+}
+
 func Debug(f string, t ...interface{}) {
 	if DebugMode {
 		if len(t) > 0 {
@@ -84,5 +99,5 @@ func DieLoudly(exitCode int, f string, t ...interface{}) {
 }
 
 func AbortLoudly(err error) {
-	DieLoudly(1, "%s", err)
+	DieLoudly(1, "%s", err.Error())
 }

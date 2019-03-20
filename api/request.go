@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/gocd-contrib/gocd-cli/dub"
+	"github.com/gocd-contrib/gocd-cli/utils"
 )
 
 type RequestConfigurer interface {
@@ -23,9 +24,9 @@ type Req struct {
 
 func (r *Req) Send(onResponse func(*dub.Response) error) error {
 	if err := r.Config(); err != nil {
-		return err
+		return utils.InspectError(err, `configuring api.Req during Send()`)
 	} else {
-		return r.Raw.Do(onResponse)
+		return utils.InspectError(r.Raw.Do(onResponse), `making api %s request to %q`, r.Raw.Method, r.Raw.Url)
 	}
 }
 
@@ -35,7 +36,7 @@ func (r *Req) ValidateUrl() error {
 			return errors.New("API URL is not absolute; make sure you have configured `server-url`")
 		}
 	} else {
-		return err
+		return utils.InspectError(err, `parsing URL %q during ValidateUrl()`, r.Raw.Url)
 	}
 	return nil
 }
@@ -44,7 +45,7 @@ func (r *Req) Config() error {
 	rc := r.Configurer
 
 	if err := r.ValidateUrl(); err != nil {
-		return err
+		return utils.InspectError(err, `validating url %q`, r.Raw.Url)
 	}
 
 	r.Raw.Header(`Accept`, rc.AcceptHeader())
@@ -52,13 +53,13 @@ func (r *Req) Config() error {
 	if auth, err := rc.Auth(); err == nil {
 		r.Raw.Auth(auth)
 	} else {
-		return err
+		return utils.InspectError(err, `setting auth on api.Req`)
 	}
 
 	if len(r.OnCreate) > 0 {
 		for _, hook := range r.OnCreate {
 			if err := hook(r.Raw); err != nil {
-				return err
+				return utils.InspectError(err, `executing api.Req onCreate hook %v`, hook)
 			}
 		}
 	}

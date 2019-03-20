@@ -44,11 +44,12 @@ func (fr *FetchRunner) FetchPlugin(id string) (string, error) {
 		payload, err := res.ReadAll()
 
 		if err != nil {
-			return err
+			return utils.InspectError(err, `reading github releases response from %q`, fr.releasesURL(PluginId))
 		}
 
 		return json.Unmarshal(payload, &releases)
 	}); nil != err {
+		utils.InspectError(err, `making request to github releases at %q`, fr.releasesURL(PluginId))
 		return "", err
 	}
 
@@ -69,6 +70,7 @@ func (fr *FetchRunner) FetchPlugin(id string) (string, error) {
 				os.RemoveAll(existing)
 			}
 		} else {
+			utils.InspectError(err, `searching for plugin with id %q in dir %q`, PluginId, PluginDir)
 			if _, isType := err.(*plugins.PluginNotFoundError); !isType {
 				return "", err
 			}

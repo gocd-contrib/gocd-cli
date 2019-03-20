@@ -31,7 +31,7 @@ func Wget(url string, name string, destFolder string) (filepath string, err erro
 		var file *os.File
 
 		if file, err = os.Create(tmpfile); err != nil {
-			return err
+			return InspectError(err, `creating tempfile %q for downloading %q`, tmpfile, name)
 		}
 
 		defer file.Close() // ensure we close the file handle even if we abort early
@@ -41,22 +41,22 @@ func Wget(url string, name string, destFolder string) (filepath string, err erro
 			_, err := io.Copy(w, body)
 
 			if err != nil {
-				return err
+				return InspectError(err, `writing downloaded data to file %q`, file.Name())
 			}
 
 			return w.Flush()
 		}); err != nil {
-			return err
+			return InspectError(err, `updating file download progress for %q`, url)
 		}
 
 		// explicitly close before rename or it may fail during rename
 		if err = file.Close(); err != nil {
-			return err
+			return InspectError(err, `closing file %q`, file.Name())
 		}
 
 		Echofln("")
 
-		return os.Rename(tmpfile, filepath)
+		return InspectError(os.Rename(tmpfile, filepath), `renaming tmplfile %q to %q`, tmpfile, filepath)
 	})
 
 	return filepath, err

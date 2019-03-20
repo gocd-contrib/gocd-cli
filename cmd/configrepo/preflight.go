@@ -46,7 +46,7 @@ func (pr *PreflightRunner) Run(args []string) {
 func (pr *PreflightRunner) handleApiResponse(res *dub.Response) error {
 	res.Consume(func(reader io.Reader) error {
 		if b, err := ioutil.ReadAll(reader); err != nil {
-			return err
+			return utils.InspectError(err, `reading preflight response from %q`, res.Raw.Request.URL)
 		} else {
 			if res.IsAuthError() {
 				utils.DieLoudly(1, `Invalid credentials. Either the username or password configured is incorrect`)
@@ -54,9 +54,9 @@ func (pr *PreflightRunner) handleApiResponse(res *dub.Response) error {
 
 			if res.IsError() {
 				if msg, err := api.ParseMessage(b); err == nil {
-					return fmt.Errorf(`Unexpected response: %s`, msg)
+					return fmt.Errorf(`Unexpected response %d: %s`, res.Status, msg)
 				} else {
-					return err
+					return utils.InspectError(err, `parsing api error %d response: %q`, res.Status, string(b))
 				}
 			}
 
@@ -67,7 +67,7 @@ func (pr *PreflightRunner) handleApiResponse(res *dub.Response) error {
 					utils.Die(1, result.DisplayErrors())
 				}
 			} else {
-				return err
+				return utils.InspectError(err, `parsing preflight api response %q`, string(b))
 			}
 		}
 
