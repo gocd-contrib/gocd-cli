@@ -79,12 +79,14 @@ func (c *Config) SetBasicAuth(user, pass string) error {
 		return errors.New("Must specify user and password")
 	}
 
-	c.native.Set("auth", nil)
-	c.native.Set("auth.type", "basic")
-	c.native.Set("auth.user", user)
-	c.native.Set("auth.password", pass)
-
-	return utils.InspectError(c.native.WriteConfig(), `writing basic auth credentials to config`)
+	return utils.InspectError(c.writeConfigExcludingKey(`auth`, func(cfg dict) error {
+		cfg[`auth`] = dict{
+			`type`:     `basic`,
+			`user`:     user,
+			`password`: pass,
+		}
+		return nil
+	}), `writing basic auth credentials to config`)
 }
 
 func (c *Config) SetTokenAuth(token string) error {
@@ -92,11 +94,13 @@ func (c *Config) SetTokenAuth(token string) error {
 		return errors.New("Must specify bearer token")
 	}
 
-	c.native.Set("auth", nil)
-	c.native.Set("auth.type", "token")
-	c.native.Set("auth.token", token)
-
-	return utils.InspectError(c.native.WriteConfig(), `writing auth token to config`)
+	return utils.InspectError(c.writeConfigExcludingKey(`auth`, func(cfg dict) error {
+		cfg[`auth`] = dict{
+			`type`:  `token`,
+			`token`: token,
+		}
+		return nil
+	}), `writing auth token to config`)
 }
 
 func (c *Config) GetAuth() map[string]string {
@@ -229,16 +233,16 @@ func (c *Config) Unset(key string) error {
 	case `auth-basic`: // we only support a single user profile, so make this an alias
 		fallthrough
 	case `auth`:
-		return c.writeConfigExcludingKey(`auth`)
+		return c.writeConfigExcludingKey(`auth`, nil)
 	case `server-url`:
-		return c.writeConfigExcludingKey(`server.url`)
+		return c.writeConfigExcludingKey(`server.url`, nil)
 	default:
 		return fmt.Errorf(`Unknown key %q`, key)
 	}
 }
 
 /**
- * This effectively removes a key from a config file, and accepts a
+ * This effectively removes a key (sub-tree) from a config file, and accepts a
  * nested key syntax (e.g., foo.bar.baz).
  *
  * Viper does not have a facility to delete a key from the config file.
@@ -263,7 +267,7 @@ func (c *Config) Unset(key string) error {
  *
  * https://giphy.com/gifs/askreddit-surprise-FbfNWx3LPoy2I
  */
-func (c *Config) writeConfigExcludingKey(key string) error {
+func (c *Config) writeConfigExcludingKey(key string, tap func(dict) error) error {
 	// `_readonly` is a viper instance that is only for reading from
 	// disk, ignoring any override registers, defaults, and environment
 	// variable overrides. We only want on-disk values.
@@ -293,6 +297,10 @@ func (c *Config) writeConfigExcludingKey(key string) error {
 			// and intended behavior.
 			c.native.Set(k, nil)
 		}
+	}
+
+	if tap != nil {
+		tap(cfg)
 	}
 
 	// `_tmp` is a viper instance that is only for writing to disk.
