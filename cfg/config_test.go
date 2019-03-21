@@ -79,10 +79,7 @@ func TestSetTokenAuth(t *testing.T) {
 func TestSettingAuthClearsPreviousSetting(t *testing.T) {
 	as := asserts(t)
 	c := testConf(true)
-	c.native.Set("auth.type", "basic")
-	c.native.Set("auth.user", TEST_USER)
-	c.native.Set("auth.password", TEST_PASSWORD)
-	c.native.WriteConfig()
+	c.SetBasicAuth(TEST_USER, TEST_PASSWORD)
 
 	as.deepEq(map[string]string{
 		"type":     "basic",
@@ -99,6 +96,20 @@ func TestSettingAuthClearsPreviousSetting(t *testing.T) {
 	}, c.fs)
 
 	as.ok(c.SetTokenAuth(`gah!`))
+
+	as.deepEq(map[string]string{
+		"type":  "token",
+		"token": "gah!",
+	}, c.GetAuth())
+
+	as.configEq(dict{
+		"auth": map[string]string{
+			"type":  "token",
+			"token": "gah!",
+		},
+	}, c.fs)
+
+	c.native.ReadInConfig() // ensure we refresh from disk to exclude override register
 
 	as.deepEq(map[string]string{
 		"type":  "token",
