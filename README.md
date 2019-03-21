@@ -14,65 +14,161 @@ $ ./build.sh
 
 This will generate the `gocd` binary in the repository's root directory (i.e., most likely your working directory).
 
-You will likely need to [`fetch`](#Fetch-plugins) recent versions of config-repo plugins to do anything interesting.
+You will likely need to [`fetch`](#Fetch-config-repo-plugins) recent versions of config-repo plugins to do anything interesting.
 
 ## Usage
 
 There are built-in help screens to the `gocd` binary if you pass in `-h` or invoke with no arguments at all.
 
-### Syntax check
-#### Example: Do a syntax check on a config-repo definition file
+### Global flags
 
+#### `--config path/to/file` (equivalent short-opt `-c`)
+
+All commands support `--config` to use a specified config file. If this file does not exist, it will be created, so long as filesystem permissions allow. This feature can be used to support multiple profiles.
+
+If this flag is omitted, `gocd` will use `${HOME}/.gocd/settings.yaml` as the default.
+
+For any command depending on a config value stored in a non-default config file path, one must specify the `--config` flag; `gocd` will not "remember" the config file location for subsequent invocations.
+
+Example:
+
+```bash
+# Configure auth token in a specific file
+$ gocd -c $HOME/myadminconfigfile.yaml config auth-token mysupersecrettoken
+
+# Use the auth configuration stored in that same file to make a preflight API call to GoCD
+$ gocd -c $HOME/myadminconfigfile.yaml configrepo --yaml preflight allpipelines.gocd.yaml
 ```
-# required flag plugin id (--yaml or --json or --groovy alias or -i 'other.plugin.id')
 
-$ ./gocd configrepo -i yaml.config.plugin syntax my-pipeline.gocd.yaml
+#### `--debug` (equivalent short-opt `-X`)
+
+Enables verbose debugging output to aid in troubleshooting any issues with the `gocd` tool.
+
+#### `--quiet` (equivalent short-opt `-q`)
+
+Suppresses **most** output. Certain fatal errors will not be suppressed so as to not provide false negative feedback.
+
+#### `--help` (equivalent short-opt `-h`)
+
+Prints a help/usage message for the current command/subcommand.
+
+### Subcommands
+
+### `config`: Setting Configuration values for the CLI
+#### Example: `server-url`: Save GoCD server base URL for API calls
+
+Note: The base URL is the URL up through the context path, which defaults to `/go` unless configured otherwise
+
+```bash
+$ gocd config server-url https://build.gocd.org/go
+```
+
+#### Example: `auth-token`, `auth-basic`: Save auth credentials for API calls
+
+Using API Token Authentication:
+
+```bash
+# Save API token to your config file
+$ gocd config auth-token mysupersecrettoken
+
+# Also accepts input from a shell pipe; must specify the `-` argument.
+$ cat /path/to/token.txt | gocd config auth-token -
+
+$ gocd config auth-token mysupersecrettoken
+```
+
+Using Basic Authentication:
+
+```bash
+# Save Basic Authentication credentials to your config file
+$ gocd config auth-token myuser secretpassword
+```
+
+#### Example: `delete`: Delete auth credentials
+
+```bash
+# Requires the config-key to delete as the only argument (auth, server-url)
+
+# Deletes the authentication configuration
+$ gocd config delete auth
+
+# Deletes the server URL configuration
+$ gocd config delete server-url
+```
+
+### Configuration by Environment Variables
+
+Alternatively, the settings can be configured or overridden using environment variables.
+
+#### Example: Set auth credentials with Environment Variables
+
+```bash
+# For auth-token, set GOCDCLI_AUTH.TYPE=token and GOCDCLI_AUTH.TOKEN=mysupersecrettoken
+# For auth-basic, set GOCDCLI_AUTH.TYPE=basic, GOCDCLI_AUTH.USER=myuser, amd GOCDCLI_AUTH.PASSWORD=mysupersecretpasswd
+# For server-url, set GOCDCLI_SERVER.URL=https://your-gocd-host/go
+
+$ GOCDCLI_AUTH.TYPE="token" GOCDCLI_AUTH.TOKEN="mysupersecrettoken" gocd configrepo --yaml preflight my-pipeline.gocd.yaml
 OK
 ```
 
-### Preflight check
-#### Example: Do a preflight check on a new config-repo definition file
+### `configrepo`: Pipelines as Code commands (a.k.a. "Config Repos")
 
-```
-# required flag plugin id (--yaml or --json or --groovy alias or -i 'other.plugin.id')
-# required argument(s) filename(s)
+#### Flags supported by all `configrepo` subcommands
 
-$ ./gocd configrepo --yaml preflight my-pipeline.gocd.yaml
+* `--plugin-id` or `-i`: **REQUIRED** - Specifies the plugin ID of the config-repo plugin used to process command input.
+* `--plugin-dir` or `-d`: Specifies the path containing config-repo plugins. Certain commands require a locally cached copy of the plugin jar files. Common config-repo plugins will automatically be downloaded on demand if they are not present. This defaults to `${HOME}/.gocd/plugins`
+* `--yaml`: Alias for `--plugin-id yaml.config.plugin`
+* `--json`: Alias for `--plugin-id json.config.plugin`
+* `--groovy`: Alias for `--plugin-id cd.go.contrib.plugins.configrepo.groovy`
+
+#### `syntax`: Syntax check
+##### Example: Do a syntax check on a config-repo definition file
+
+```bash
+$ gocd configrepo --yaml syntax my-pipeline.gocd.yaml
 OK
 ```
 
-#### Example: Do a preflight check of an existing config-repo definition file (before checking it in)
+#### `preflight`: Preflight check
+##### Example: Do a preflight check on a new config-repo definition file
 
-```
-# required flag plugin id (--yaml or --json or --groovy alias or -i 'other.plugin.id')
-# optional flag --repo-id 'repo-id' or -r 'repo-id'
-# required argument(s) filename(s)
-
-$ ./gocd configrepo --yaml -r 'my-existing-repo' preflight my-pipeline.gocd.yaml
+```bash
+# Tests the config definition as a new config-repo on the GoCD instance before committing and pushing upstream
+$ gocd configrepo --yaml preflight my-pipeline.gocd.yaml
 OK
 ```
 
-### Fetch plugins
+##### Example: Do a preflight check of an existing config-repo definition file (before checking it in)
 
-Note: the fetch command will save the plugin to $HOME/.gocd/plugins
-
-#### Example: Fetch a config-repo plugin
-
-```
-# required flag plugin id (--yaml or --json or --groovy alias or -i 'other.plugin.id')
-# optional flag --match-version (omitting will fetch the latest)
-
-$ ./gocd configrepo -i yaml.config.plugin fetch
-Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.8.3/yaml-config-plugin-0.8.3.jar
-  Fetched 2.3 MB/2.3 MB (100.0%) complete
+```bash
+# If a config-repo already exists on your GoCD instance, you MUST specify `--repo-id YOUR_REPO_ID` (short-opt `-r`) to indicate to GoCD
+# that this is testing an update to an existing configuration, and not testing a new configuration; otherwise, GoCD may report a
+# duplicate pipeline name error.
+$ gocd configrepo --yaml preflight -r my-existing-repo my-pipeline.gocd.yaml
+OK
 ```
 
-#### Example: Fetch a config-repo plugin matching a specific version or a version range
+#### `fetch`: Fetch config-repo plugins
+
+Note: the fetch command will save the plugin to `${HOME}/.gocd/plugins` or to the path specified by `--plugin-dir`
+
+##### Example: Fetch a config-repo plugin
+
+```bash
+$ gocd configrepo --yaml fetch
+Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.9.0/yaml-config-plugin-0.9.0.jar
+  Fetched 3.2 MB/3.2 MB (100.0%) complete
+
+# With a non-default `--plugin-dir`
+$ gocd configrepo --yaml -d /tmp/gocd-plugins fetch
+Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.9.0/yaml-config-plugin-0.9.0.jar
+  Fetched 3.2 MB/3.2 MB (100.0%) complete
 
 ```
-# required flag plugin id (--yaml or --json or --groovy alias or -i 'other.plugin.id')
-# optional flag --match-version accepts a semver (semantic version) query or range string
-#
+
+##### Example: Fetch a config-repo plugin matching a specific version or a version range
+
+```bash
 # Examples:
 #
 # --match-version 0.7.0 will fetch specified release 0.7.0
@@ -80,54 +176,7 @@ Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0
 # --match-version '>=0.5.0 <0.8.0 || >=0.8.1 !0.8.3' # compound range; will resolve to 0.8.2
 # --match-version '0.8.x' # wildcard, will match latest 0.8.x release
 
-$ ./gocd configrepo -i yaml.config.plugin fetch --match-version '< 0.7.0'
+$ gocd configrepo --yaml fetch --match-version '< 0.7.0'
 Downloading https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.6.2/yaml-config-plugin-0.6.2.jar
   Fetched 2.0 MB/2.0 MB (100.0%) complete
-```
-
-## Configuration
-
-### Setting Configuration with CLI
-#### Example: Save GoCD server base URL for API calls
-
-Note: The base URL is the URL up through the context path, which defaults to `/go` unless configured otherwise
-
-```
-# required argument url
-# optional flag --config 'path/to/file' or -c 'path/to/file' (omitting will use default file $HOME/.gocd/settings.yaml)
-
-$ ./gocd config server-url https://build.gocd.org/go
-```
-
-#### Example: Save auth credentials (currently, basic auth only) for API calls
-
-```
-# required arguments username password
-# optional flag --config 'path/to/file' or -c 'path/to/file'
-# note: if the -config flag is used, then all subsequent commands
-# dependent on that configuration must also include the flag
-
-$ ./gocd config -c '${HOME}/.gocd/myadminconfigfile.yaml auth-basic myuser secretpassword
-```
-
-#### Example: Delete auth credentials
-
-```
-# required argument config-key to delete (auth, server-url)
-# optional flag --config 'path/to/file' or -c 'path/to/file' (omitting will use default file $HOME/.gocd/settings.yaml)
-
-$ ./gocd config delete auth
-```
-
-### Using Environment Variables
-
-Alternatively the settings can be configured or overridden using environment variables.
-
-#### Example: Set auth credentials with Environment Variables
-
-```
-# required variables GOCDCLI_AUTH.TYPE, GOCDCLI_AUTH.USER, GOCDCLI_AUTH.PASSWORD
-
-$ GOCDCLI_AUTH.TYPE="basic" GOCDCLI_AUTH.USER="myuser" GOCDCLI_AUTH.PASSWORD="mypassword" ./gocd configrepo --yaml preflight my-pipeline.gocd.yaml
-OK
 ```

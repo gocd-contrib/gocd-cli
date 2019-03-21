@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/gocd-contrib/gocd-cli/utils"
 	"github.com/spf13/cobra"
 )
@@ -8,7 +10,10 @@ import (
 var DeleteCmd = &cobra.Command{
 	Use:   "delete <config-key>",
 	Short: "Deletes a configured value",
-	Args:  cobra.ExactArgs(1),
+	Example: strings.Trim(`
+  gocd config delete auth          # Deletes the current authentication configuration
+  gocd config delete server-url    # Deletes the server URL configuration`, "\n"),
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		deleteConfig.Run(args)
 	},
