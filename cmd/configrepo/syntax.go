@@ -32,7 +32,8 @@ func (sr *SyntaxRunner) Run(args []string) {
 		utils.DieLoudly(1, "You must provide a --plugin-id")
 	}
 
-	sr.FindPluginJar()
+	sr.FindOrDownloadPluginJar()
+
 	cmdArgs := append([]string{"-jar", PluginJar, "syntax"}, args...)
 	cmd := exec.Command("java", cmdArgs...)
 
@@ -62,18 +63,25 @@ func (sr *SyntaxRunner) Run(args []string) {
 	}
 }
 
-func (sr *SyntaxRunner) FindPluginJar() {
-	if found, err := plugins.PluginById(PluginId, PluginDir); err != nil {
-		utils.Echofln("%s", err)
-		utils.Echofln("Attempting to fetch the plugin:")
-		if found, err := fetch.FetchPlugin(PluginId); err != nil {
+func (sr *SyntaxRunner) FindOrDownloadPluginJar() {
+	var found string
+	var err error
+
+	if found, err = plugins.PluginById(PluginId, PluginDir); err != nil {
+		utils.Errfln(`Could not find plugin %q in your plugin path.`, PluginId)
+
+		if _, err = fetch.GetReleaseUrl(PluginId); err != nil {
 			utils.AbortLoudly(err)
 		} else {
-			PluginJar = found
+			utils.Echofln(`Attempting to download plugin %q...`, PluginId)
 		}
-	} else {
-		PluginJar = found
+
+		if found, err = fetch.FetchPlugin(PluginId); err != nil {
+			utils.AbortLoudly(err)
+		}
 	}
+
+	PluginJar = found
 }
 
 func init() {
