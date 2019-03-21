@@ -80,11 +80,19 @@ func (fr *FetchRunner) FetchPlugin(id string) (string, error) {
 	}
 }
 
+func (fr *FetchRunner) GetReleaseUrl(pluginId string) (string, error) {
+	if v, ok := plugins.ConfigRepo[pluginId]; ok {
+		return v.Url, nil
+	}
+
+	return "", fmt.Errorf("Don't know how to fetch plugin `%s`; known plugins: %s", pluginId, plugins.ConfigRepo.ShortList())
+}
+
 func (fr *FetchRunner) releasesURL(pluginId string) (releaseUrl string) {
-	if v, ok := plugins.ConfigRepo[PluginId]; ok {
-		releaseUrl = v.Url
+	if u, err := fr.GetReleaseUrl(pluginId); err == nil {
+		releaseUrl = u
 	} else {
-		utils.DieLoudly(1, "Don't know how to fetch plugin `%s`; known plugins: %s", pluginId, plugins.ConfigRepo.ShortList())
+		utils.AbortLoudly(err)
 	}
 	return
 }
