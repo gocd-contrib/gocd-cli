@@ -18,6 +18,12 @@ You will likely need to [`fetch`](#fetch-fetch-config-repo-plugins) recent versi
 
 ## Usage
 
+The general invocation pattern for `gocd` looks like this:
+
+```bash
+gocd [global-flags] COMMAND [flags] [SUBCOMMAND] [sub-flags] [args...]
+```
+
 There are built-in help screens to the `gocd` binary if you pass in `-h` or invoke with no arguments at all.
 
 ### Global flags
