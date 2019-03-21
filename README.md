@@ -14,7 +14,7 @@ $ ./build.sh
 
 This will generate the `gocd` binary in the repository's root directory (i.e., most likely your working directory).
 
-You will likely need to [`fetch`](#Fetch-config-repo-plugins) recent versions of config-repo plugins to do anything interesting.
+You will likely need to [`fetch`](#fetch-fetch-config-repo-plugins) recent versions of config-repo plugins to do anything interesting.
 
 ## Usage
 
