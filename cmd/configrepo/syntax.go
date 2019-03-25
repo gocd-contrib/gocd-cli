@@ -13,7 +13,7 @@ import (
 )
 
 var SyntaxCmd = &cobra.Command{
-	Use:   "syntax",
+	Use:   "syntax <file> [<file2>, ...]",
 	Short: "Checks one or more definition files for syntactical correctness",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

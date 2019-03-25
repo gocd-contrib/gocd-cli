@@ -14,8 +14,9 @@ import (
 )
 
 var PreflightCmd = &cobra.Command{
-	Use:   "preflight",
+	Use:   "preflight <file> [<file2>, ...]",
 	Short: "Preflights any number of definition files for syntax, structure, and dependencies against a running GoCD server",
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		preflight.Run(args)
 	},

@@ -10,7 +10,7 @@ import (
 )
 
 var TokenAuthCmd = &cobra.Command{
-	Use:   "auth-token TOKEN",
+	Use:   "auth-token <token>",
 	Short: "Configures token authentication for API requests to the GoCD server instance",
 	Long:  "This sets the Personal Access Token for GoCD API requests made by this CLI tool.",
 	Example: strings.Trim(`
