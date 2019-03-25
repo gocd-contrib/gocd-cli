@@ -3,8 +3,6 @@ package configrepo
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/url"
 
 	"github.com/gocd-contrib/gocd-cli/api"
@@ -39,43 +37,39 @@ func (pr *PreflightRunner) Run(args []string) {
 		body.AddFile(`files[]`, f)
 	}
 
-	if err := api.V1.Post(pr.url(), body).Send(pr.handleApiResponse); err != nil {
+	if err := api.V1.Post(pr.url(), body).Send(pr.onSuccess, pr.onFail); err != nil {
 		utils.AbortLoudly(err)
 	}
 }
 
-func (pr *PreflightRunner) handleApiResponse(res *dub.Response) error {
-	res.Consume(func(reader io.Reader) error {
-		if b, err := ioutil.ReadAll(reader); err != nil {
-			return utils.InspectError(err, `reading preflight response from %q`, res.Raw.Request.URL)
-		} else {
-			if res.IsAuthError() {
-				utils.DieLoudly(1, `Invalid credentials. Either the username or password configured is incorrect`)
-			}
-
-			if res.IsError() {
-				if msg, err := api.ParseMessage(b); err == nil {
-					return fmt.Errorf(`Unexpected response %d: %s`, res.Status, msg)
-				} else {
-					return utils.InspectError(err, `parsing api error %d response: %q`, res.Status, string(b))
-				}
-			}
-
-			if result, err := ParseCrPreflight(b); err == nil {
-				if result.Valid {
-					utils.Echofln(`OK`)
-				} else {
-					utils.Die(1, result.DisplayErrors())
-				}
+func (pr *PreflightRunner) onSuccess(res *dub.Response) error {
+	return api.ReadBodyAndDo(res, func(b []byte) error {
+		if result, err := ParseCrPreflight(b); err == nil {
+			if result.Valid {
+				utils.Echofln(`OK`)
 			} else {
-				return utils.InspectError(err, `parsing preflight api response %q`, string(b))
+				utils.Die(1, result.DisplayErrors())
 			}
+		} else {
+			return utils.InspectError(err, `parsing preflight api response %q`, string(b))
 		}
-
 		return nil
 	})
+}
 
-	return nil
+func (pr *PreflightRunner) onFail(res *dub.Response) error {
+	return api.ReadBodyAndDo(res, func(b []byte) error {
+		if res.IsAuthError() {
+			utils.DieLoudly(1, `Invalid credentials. Either the username or password configured is incorrect`)
+			return nil // never get here anyway
+		}
+
+		if msg, err := api.ParseMessage(b); err == nil {
+			return fmt.Errorf(`Unexpected response %d: %s`, res.Status, msg)
+		} else {
+			return utils.InspectError(err, `parsing api error %d response: %q`, res.Status, string(b))
+		}
+	})
 }
 
 func (pr *PreflightRunner) url() string {

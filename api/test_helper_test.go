@@ -74,6 +74,13 @@ func nopRt() mockRT {
 	})
 }
 
+func useRt(status int, body string) mockRT {
+	return mockRT(func(rq *http.Request) (rs *http.Response, e error) {
+		rs = resp(status, body)
+		return
+	})
+}
+
 func resp(status int, body string) *http.Response {
 	return &http.Response{
 		StatusCode: status,

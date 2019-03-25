@@ -59,7 +59,7 @@ func TestConfigAppliesOnCreateHooks(t *testing.T) {
 	as.eq(`bar`, req.Raw.Headers.Get(`Foo`))
 }
 
-func TestSend(t *testing.T) {
+func TestSendWithSuccessResponse(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
@@ -68,13 +68,42 @@ func TestSend(t *testing.T) {
 	}
 
 	didRun := false
-	onResponse := func(res *dub.Response) error {
+	onSuccess := func(res *dub.Response) error {
 		as.is(res.IsSuccess())
 		didRun = true
 		return nil
 	}
 
-	as.ok(req.Send(onResponse))
+	onFail := func(res *dub.Response) error {
+		t.Error(`Response should not be failure!`)
+		return nil
+	}
+
+	as.ok(req.Send(onSuccess, onFail))
+	as.is(didRun)
+}
+
+func TestSendWithFailureResponse(t *testing.T) {
+	as := asserts(t)
+
+	req := &api.Req{
+		Raw:        dub.Make(useRt(404, `not found`)).Get(`http://test`),
+		Configurer: &testConfigurer{},
+	}
+
+	didRun := false
+	onFail := func(res *dub.Response) error {
+		as.is(res.IsError())
+		didRun = true
+		return nil
+	}
+
+	onSuccess := func(res *dub.Response) error {
+		t.Error(`Response should not be success!`)
+		return nil
+	}
+
+	as.ok(req.Send(onSuccess, onFail))
 	as.is(didRun)
 }
 
@@ -97,6 +126,6 @@ func TestAbortsSendByReturningErrorOnCreate(t *testing.T) {
 		return nil
 	}
 
-	as.err(`Stop this request!`, req.Send(onResponse))
+	as.err(`Stop this request!`, req.Send(onResponse, onResponse))
 	as.not(didRun)
 }

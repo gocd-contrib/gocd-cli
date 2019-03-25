@@ -23,11 +23,20 @@ type Req struct {
 	Configurer RequestConfigurer
 }
 
-func (r *Req) Send(onResponse func(*dub.Response) error) error {
+func (r *Req) Send(onResponse, onErrorResponse func(*dub.Response) error) error {
 	if err := r.Config(); err != nil {
 		return utils.InspectError(err, `configuring api.Req during Send()`)
 	} else {
-		return utils.InspectError(r.Raw.Do(onResponse), `making api %s request to %q`, r.Raw.Method, r.Raw.Url)
+		handleResponse := func(res *dub.Response) error {
+			if res.IsError() {
+				utils.Debug(`handling error response %d`, res.Status)
+				return onErrorResponse(res)
+			}
+			utils.Debug(`handling success response %d`, res.Status)
+			return onResponse(res)
+		}
+
+		return utils.InspectError(r.Raw.Do(handleResponse), `making api %s request to %q`, r.Raw.Method, r.Raw.Url)
 	}
 }
 
