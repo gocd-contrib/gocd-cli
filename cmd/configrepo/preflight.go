@@ -59,10 +59,7 @@ func (pr *PreflightRunner) onSuccess(res *dub.Response) error {
 
 func (pr *PreflightRunner) onFail(res *dub.Response) error {
 	return api.ReadBodyAndDo(res, func(b []byte) error {
-		if res.IsAuthError() {
-			utils.DieLoudly(1, `Invalid credentials. Either the username or password configured is incorrect`)
-			return nil // never get here anyway
-		}
+		api.DieOnAuthError(res)
 
 		if msg, err := api.ParseMessage(b); err == nil {
 			return fmt.Errorf(`Unexpected response %d: %s`, res.Status, msg)

@@ -30,12 +30,21 @@ func (r *Req) Send(onResponse, onErrorResponse func(*dub.Response) error) error 
 		handleResponse := func(res *dub.Response) error {
 			if res.IsError() {
 				utils.Debug(`handling error response %d`, res.Status)
-				return onErrorResponse(res)
+				if onErrorResponse != nil {
+					return onErrorResponse(res)
+				}
+				utils.Debug(`error response handler is nil; ignoring response`)
+				return nil
 			}
 			utils.Debug(`handling success response %d`, res.Status)
-			return onResponse(res)
+			if onResponse != nil {
+				return onResponse(res)
+			}
+			utils.Debug(`success response handler is nil; ignoring response`)
+			return nil
 		}
 
+		traceRequest(r.Raw)
 		return utils.InspectError(r.Raw.Do(handleResponse), `making api %s request to %q`, r.Raw.Method, r.Raw.Url)
 	}
 }

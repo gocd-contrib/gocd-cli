@@ -24,6 +24,10 @@ func NewAllocPayload(buffer io.Reader) MultipartPayload {
 	return &allocPayload{r: buffer, ready: false}
 }
 
+func NewWireTapPayload(wrapped MultipartPayload, onRead func([]byte) error) MultipartPayload {
+	return &wiretapPayload{delegate: wrapped, onRead: onRead}
+}
+
 // Implements a payload by allocating byte slice in memory for the entire payload.
 // Payload assembly happens synchronously, so the final content length is calculable
 // and will be set on the request. Limited to amount of memory allocable to the process.
@@ -150,4 +154,42 @@ func (p *pipedPayload) DoAssemble(w *multipart.Writer, parts []Part) error {
 	// or this will block on w.Write(). Assembly errors will be
 	// handled during Read(), which happens concurrently.
 	return nil
+}
+
+// Implements a wrapping payload that is similar in concept to io.TeeReader.
+// It wraps another MultipartPayload and has a function member, `onRead()`,
+// that will receive the bytes read. Note that any error returned by onRead()
+// will be reported as a `Read()` error. `onRead()` can modify the []byte data
+// before it returns from `Read()`.
+type wiretapPayload struct {
+	delegate MultipartPayload
+	onRead   func([]byte) error
+}
+
+// Exposes the `[]byte` read to an `onRead()` function, where it can be spied
+// on or modified in-flight. Any error returned by onRead() will be reported
+// as a `Read()` error.
+func (p *wiretapPayload) Read(b []byte) (n int, err error) {
+	if n, err = p.delegate.Read(b); err == nil {
+		if p.onRead != nil && n > 0 {
+			err = p.onRead(b[:n])
+		}
+	}
+	return
+}
+
+func (p *wiretapPayload) Close() error {
+	return p.delegate.Close()
+}
+
+func (p *wiretapPayload) Len() int {
+	return p.delegate.Len()
+}
+
+func (p *wiretapPayload) Ready() bool {
+	return p.delegate.Ready()
+}
+
+func (p *wiretapPayload) DoAssemble(w *multipart.Writer, parts []Part) error {
+	return p.delegate.DoAssemble(w, parts)
 }

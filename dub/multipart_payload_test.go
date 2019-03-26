@@ -53,3 +53,36 @@ func TestPipedPayload(t *testing.T) {
 	as.ok(err)
 	as.eq(1, d)
 }
+
+func TestWiretapPayload(t *testing.T) {
+	as := asserts(t)
+
+	b := &bytes.Buffer{}
+	w := multipart.NewWriter(b)
+	w.SetBoundary("testbound")
+
+	carbonCopy := &bytes.Buffer{}
+
+	p := NewAllocPayload(b)
+	wt := NewWireTapPayload(p, func(data []byte) error {
+		_, err := carbonCopy.Write(data)
+		return err
+	})
+
+	// All methods should pass through to the wrapped payload
+	as.not(wt.Ready())
+	d, err := wt.Read(make([]byte, 1))
+	as.err("EOF", err) // errors pass-thru
+	as.eq(0, d)
+
+	as.ok(p.DoAssemble(w, []Part{NewFieldPart("foo", "bar")})) // assemble the inner payload
+	as.is(wt.Ready())
+	as.is(wt.Len() > 0)
+
+	original := make([]byte, wt.Len())
+	d, err = wt.Read(original)
+	as.ok(err)
+
+	as.eq(string(original), carbonCopy.String()) // successfully tapped!
+	as.eq(len(original), d)
+}
