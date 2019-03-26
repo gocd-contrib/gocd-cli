@@ -7,6 +7,7 @@ import (
 
 var RootCmd = &cobra.Command{
 	Use:       "config",
+	Aliases:   []string{"cf"},
 	Short:     "GoCD CLI configuration",
 	ValidArgs: []string{"auth-basic", "server-url", "help", "clear"}, // bash-completion
 }
