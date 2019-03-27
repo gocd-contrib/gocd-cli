@@ -12,9 +12,10 @@ import (
 )
 
 var ExportCmd = &cobra.Command{
-	Use:   "export <pipeline name>",
-	Short: "Exports the specified pipeline as a config-repo definition in the indicated config-repo plugin format",
-	Args:  cobra.ExactArgs(1),
+	Use:     "export <pipeline name>",
+	Aliases: []string{"ex"},
+	Short:   "Exports the specified pipeline as a config-repo definition in the indicated config-repo plugin format",
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		export.Run(args)
 	},
