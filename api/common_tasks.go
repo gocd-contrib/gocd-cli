@@ -30,6 +30,12 @@ func ReadBodyAndDo(res *dub.Response, action func([]byte) error) error {
 	})
 }
 
+func DieOnNotFound(res *dub.Response, errorMsg string, t ...interface{}) {
+	if res.IsNotFound() {
+		utils.DieLoudly(1, errorMsg, t...)
+	}
+}
+
 func DieOnAuthError(res *dub.Response) {
 	if res.IsAuthError() {
 		utils.DieLoudly(1, `Invalid credentials. Either the configured username, password, or auth token is incorrect`)
