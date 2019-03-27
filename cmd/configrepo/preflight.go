@@ -60,6 +60,7 @@ func (pr *PreflightRunner) onSuccess(res *dub.Response) error {
 func (pr *PreflightRunner) onFail(res *dub.Response) error {
 	return api.ReadBodyAndDo(res, func(b []byte) error {
 		api.DieOnAuthError(res)
+		api.DieOnNotFound(res, `No corresponding config-repo found for id: "%s"`, pr.RepoId)
 
 		if msg, err := api.ParseMessage(b); err == nil {
 			return fmt.Errorf(`Unexpected response %d: %s`, res.Status, msg)
