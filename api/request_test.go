@@ -8,11 +8,15 @@ import (
 	"github.com/gocd-contrib/gocd-cli/dub"
 )
 
+const (
+	TEST_API_URL = `http://test/go/api/doit`
+)
+
 func TestRequestValidateUrl(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
-		Raw:        testDub().Get(`http://test`),
+		Raw:        testDub().Get(TEST_API_URL),
 		Configurer: &testConfigurer{},
 	}
 
@@ -30,7 +34,7 @@ func TestConfigSetsAcceptHeaderAndAuth(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
-		Raw:        testDub().Get(`http://test`),
+		Raw:        testDub().Get(TEST_API_URL),
 		Configurer: &testConfigurer{},
 	}
 
@@ -44,7 +48,7 @@ func TestConfigAppliesOnCreateHooks(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
-		Raw:        testDub().Get(`http://test`),
+		Raw:        testDub().Get(TEST_API_URL),
 		Configurer: &testConfigurer{},
 		OnCreate: []api.CreateHook{
 			func(r *dub.Request) error {
@@ -63,7 +67,7 @@ func TestSendWithSuccessResponse(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
-		Raw:        testDub().Get(`http://test`),
+		Raw:        testDub().Get(TEST_API_URL),
 		Configurer: &testConfigurer{},
 	}
 
@@ -87,7 +91,7 @@ func TestSendWithFailureResponse(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
-		Raw:        dub.Make(useRt(404, `not found`)).Get(`http://test`),
+		Raw:        dub.Make(useRt(404, `not found`)).Get(TEST_API_URL),
 		Configurer: &testConfigurer{},
 	}
 
@@ -111,7 +115,7 @@ func TestAbortsSendByReturningErrorOnCreate(t *testing.T) {
 	as := asserts(t)
 
 	req := &api.Req{
-		Raw:        testDub().Get(`http://test`),
+		Raw:        testDub().Get(TEST_API_URL),
 		Configurer: &testConfigurer{},
 		OnCreate: []api.CreateHook{
 			func(r *dub.Request) error {

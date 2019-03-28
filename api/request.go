@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/url"
+	"strings"
 
 	"github.com/gocd-contrib/gocd-cli/dub"
 	"github.com/gocd-contrib/gocd-cli/utils"
@@ -57,6 +58,10 @@ func (r *Req) ValidateUrl() error {
 	if u, err := url.Parse(r.Raw.Url); err == nil {
 		if "" == u.Scheme || "" == u.Host {
 			return errors.New("API URL is not absolute; make sure you have configured `server-url`")
+		}
+
+		if !strings.HasPrefix(u.Path, `/go/api/`) {
+			return errors.New(`This is not an API URL: ` + u.String())
 		}
 	} else {
 		return utils.InspectError(err, `parsing URL %q during ValidateUrl()`, r.Raw.Url)

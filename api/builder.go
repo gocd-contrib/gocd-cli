@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path"
 	"strconv"
 
 	"github.com/gocd-contrib/gocd-cli/cfg"
@@ -60,8 +61,8 @@ func (b *Builder) Validate() error {
 	return b.conf.WithBaseUrlValidation(b.conf.GetServerUrl(), nil)
 }
 
-func (b *Builder) Url(path string) string {
-	return b.conf.GetServerUrl() + path
+func (b *Builder) Url(uri string) string {
+	return b.conf.GetServerUrl() + path.Clean(uri)
 }
 
 func (b *Builder) AcceptHeader() string {
