@@ -11,7 +11,6 @@ import (
 var RootCmd = &cobra.Command{
 	Use:       "gocd",
 	Short:     "A command-line companion to a GoCD server",
-	Long:      `A command-line helper to GoCD to help build config-repos, among other things (?)`,
 	ValidArgs: []string{"config", "configrepo", "help"}, // bash-completion
 }
 

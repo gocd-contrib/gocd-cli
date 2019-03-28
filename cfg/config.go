@@ -51,6 +51,10 @@ func (c *Config) GetServerUrl() string {
 }
 
 func (c *Config) WithBaseUrlValidation(urlArg string, onValid func(string) error) error {
+	if urlArg == "" {
+		return errors.New(`server-url is not configured`)
+	}
+
 	if u, err := url.Parse(urlArg); err != nil {
 		return utils.InspectError(err, `parsing base url %q`, urlArg)
 	} else {
