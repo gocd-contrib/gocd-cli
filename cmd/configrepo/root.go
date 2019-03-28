@@ -19,7 +19,7 @@ var RootCmd = &cobra.Command{
 	Aliases:   []string{"cr"},
 	Short:     "GoCD config-repo functions",
 	Long:      `Functions to help development of config-repos in GoCD (pipeline configs as code)`,
-	ValidArgs: []string{"syntax", "fetch", "preflight", "help"}, // bash-completion
+	ValidArgs: []string{"show", "rm", "syntax", "fetch", "preflight", "help"}, // bash-completion
 }
 
 func init() {
