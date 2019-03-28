@@ -1,18 +1,32 @@
+
 ---
 format_version: 3
+environments:
+  internal:
+    pipelines:
+      - gocd-cli
 pipelines:
   gocd-cli:
     group: go-cd-contrib
     materials:
       github:
-        git: https://git.gocd.io/git/gocd-contrib/gocd-cli
-
+        git: https://github.com/gocd-contrib/gocd-cli
+        destination: cli
+      codesigning:
+        git: https://github.com/gocd/codesigning
+        destination: codesigning
+      signing-keys:
+        svn: https://github.com/gocd-private/signing-keys/trunk
+        username: gocd-ci-user
+        encrypted_password: "AES:taOvOCaXsoVwzIi+xIGLdA==:GSfhZ6KKt6MXKp/wdYYoyBQKKzbTiyDa+35kDgkEIOF75s9lzerGInbqbUM7nUKc"
+        destination: signing-keys
     stages:
       - build:
           elastic_profile_id: ecs-golang-build
           artifacts:
             - build:
                 source: dist/**/*
+                destination: dist/
           tasks:
           - exec:
               command: /bin/bash
@@ -21,3 +35,83 @@ pipelines:
                 - --verbose
                 - --prod
                 - --release=Edge
+              working_directory: cli
+          - exec:
+              command: mv
+              arguments:
+                - dist
+                - ..
+              working_directory: cli
+      - code-signing:
+          clean_workspace: yes
+          secure_variables:
+            GOCD_GPG_PASSPHRASE: "AES:7lAutKoRKMuSnh3Sbg9DeQ==:8fhND9w/8AWw6dJhmWpTcCdKSsEcOzriQNiKFZD6XtN+sJvZ65NH/QFXRNiy192+SSTKsbhOrFmw+kAKt5+MH1Erd6H54zJjpSgvJUmsJaQ="
+          jobs:
+            osx:
+              artifacts:
+                - build:
+                    source: osx-cli.zip
+              resources:
+                - mac
+                - signer
+              tasks:
+              - fetch:
+                  stage: build
+                  job: build
+                  source: dist/
+              - exec:
+                  command: /bin/bash
+                  arguments:
+                    - cli/codesigning-helpers/osx-codesign.sh
+                    - dist/darwin/amd64/gocd
+            win:
+              elastic_profile_id: window-dev-build
+              artifacts:
+                - build:
+                    source: win-cli.zip
+              tasks:
+              - fetch:
+                  stage: build
+                  job: build
+                  source: dist/
+              - exec:
+                  command: call
+                  arguments:
+                    - cli\codesigning-helpers\win-codesign.bat
+      - bundle:
+          elastic_profile_id: ecs-golang-build
+          artifacts:
+            - build:
+                source: clis.zip
+          tasks:
+          - fetch:
+              stage: build
+              job: build
+              source: dist/
+          - fetch:
+              stage: code-signing
+              job: osx
+              source: osx-cli.zip
+              is_file: yes
+          - fetch:
+              stage: code-signing
+              job: win
+              source: win-cli.zip
+              is_file: yes
+          - exec:
+              command: /bin/bash
+              arguments:
+                - -c
+                - |
+                  echo "Collating codesigned binaries..."
+                  (cd dist/windows/amd64 && unzip -o ../../../win-cli.zip)
+                  (cd dist/darwin/amd64 && unzip -o ../../../osx-cli.zip)
+                  sha256sum dist/darwin/amd64/gocd
+                  sha256sum dist/linux/amd64/gocd
+                  sha256sum dist/windows/amd64/gocd.exe
+          - exec:
+              command: zip
+              arguments:
+                - -r
+                - clis.zip
+                - dist
