@@ -31,10 +31,13 @@ pipelines:
           - exec:
               command: /bin/bash
               arguments:
-                - build.sh
-                - --verbose
-                - --prod
-                - --release=Edge
+                - -c
+                - bundle
+                - install
+                - --path=.bundle
+                - --clean
+          - rake:
+              target: build:prod
               working_directory: cli
           - exec:
               command: mv
