@@ -49,7 +49,7 @@ function ldflags {
 }
 
 echo "Fetching dependencies"
-go get -d $extra_flags ./...
+go get -tags netgo -d $extra_flags ./...
 
 if [[ "true" = "$skip" ]]; then
   echo "Skipping tests"
@@ -91,8 +91,10 @@ if [[ "true" = "$multiplatform" ]]; then
 
     echo "Building $plt..."
 
-    GOOS="${_os}" go get -d $extra_flags ./...
+    GOOS="${_os}" go get -tags netgo -d $extra_flags ./...
     GOOS="${_os}" GOARCH="${_arch}" go build \
+      -tags netgo \
+      -a \
       -o "dist/${plt}/${name}" \
       -ldflags "$(ldflags "$_os" "$_arch")"
   done
