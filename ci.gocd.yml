@@ -59,11 +59,9 @@ pipelines:
                   stage: build
                   job: build
                   source: dist/
-              - exec:
-                  command: /bin/bash
-                  arguments:
-                    - cli/codesigning-helpers/osx-codesign.sh
-                    - dist/darwin/amd64/gocd
+              - rake:
+                  target: osx:sign
+                  working_directory: cli
             win:
               elastic_profile_id: window-dev-build
               artifacts:
@@ -77,7 +75,25 @@ pipelines:
               - exec:
                   command: call
                   arguments:
-                    - cli\codesigning-helpers\win-codesign.bat
+                    - gem
+                    - install
+                    - bundler
+                  working_directory: cli
+              - exec:
+                  command: call
+                  arguments:
+                    - bundle
+                    - install
+                  working_directory: cli
+              - exec:
+                  command: call
+                  arguments:
+                    - bundle
+                    - install
+                  working_directory: codesigning
+              - rake:
+                  target: win:sign
+                  working_directory: cli
       - bundle:
           elastic_profile_id: ecs-golang-build
           artifacts:
