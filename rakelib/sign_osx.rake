@@ -14,7 +14,7 @@ namespace :osx do
 
   task :sign => :setup do
     cd "../#{signing_base}" do
-      sh 'rake --trace osx:sign_as_zip'
+      sh 'rake --trace osx:sign'
       mv 'out/osx/osx-cli.zip', '..'
     end
   end
