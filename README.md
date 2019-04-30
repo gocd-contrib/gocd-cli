@@ -87,7 +87,7 @@ Using Basic Authentication:
 
 ```bash
 # Save Basic Authentication credentials to your config file
-$ gocd config auth-token myuser secretpassword
+$ gocd config auth-basic myuser secretpassword
 ```
 
 #### Example: `delete`: Delete auth credentials
