@@ -16,6 +16,25 @@ This will generate the `gocd` binary in the repository's root directory (i.e., m
 
 You will likely need to [`fetch`](#fetch-fetch-config-repo-plugins) recent versions of config-repo plugins to do anything interesting.
 
+### Build in docker
+
+Alternatively, if you have local docker daemon, you can build the binary using [docker golang-dojo](https://github.com/kudulab/docker-golang-dojo) image.
+
+1. [Install docker](https://docs.docker.com/install/), if you haven't already.
+2. [Install Dojo](https://github.com/ai-traders/dojo#installation), it is a self-contained binary, so just place it somewhere on the `PATH`.
+On **Linux**:
+```bash
+DOJO_VERSION=0.4.3
+wget -O dojo https://github.com/ai-traders/dojo/releases/download/${DOJO_VERSION}/dojo_linux_amd64
+sudo mv dojo /usr/local/bin
+sudo chmod +x /usr/local/bin/dojo
+```
+3. Build gocd-cli with
+```
+dojo ./build.sh
+```
+This will generate the `gocd` binary in the repository's root directory.
+
 ## Usage
 
 The general invocation pattern for `gocd` looks like this:
