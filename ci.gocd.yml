@@ -1,5 +1,5 @@
 ---
-format_version: 3
+format_version: 5
 environments:
   internal:
     pipelines:
@@ -7,6 +7,7 @@ environments:
 pipelines:
   gocd-cli:
     group: go-cd-contrib
+    display_order: -10
     materials:
       github:
         git: https://github.com/gocd-contrib/gocd-cli
@@ -15,7 +16,7 @@ pipelines:
         git: https://github.com/gocd/codesigning
         destination: codesigning
       signing-keys:
-        svn: https://github.com/gocd-private/signing-keys/trunk
+        git: https://github.com/gocd-private/signing-keys
         username: gocd-ci-user
         encrypted_password: "AES:taOvOCaXsoVwzIi+xIGLdA==:GSfhZ6KKt6MXKp/wdYYoyBQKKzbTiyDa+35kDgkEIOF75s9lzerGInbqbUM7nUKc"
         destination: signing-keys
