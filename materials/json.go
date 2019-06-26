@@ -10,12 +10,14 @@ import (
 type Material interface {
 	Type() string
 	SetRequiredString(string, string) error
-	SetString(string, string, string)
+	SetStringWithDefault(string, string, string)
 	SetStringIfFlagSet(string, string, *pflag.Flag)
 	SetBoolIfFlagSet(string, bool, *pflag.Flag)
 	SetBool(string, bool)
 
+	Equivalent(Material) bool
 	SetAttributes(map[string]interface{}) error
+	asHashMap() hash
 }
 
 func NewGit() *Git { return &Git{hash: hash{`auto_update`: true}} }
@@ -70,30 +72,50 @@ type Git struct {
 	hash
 }
 
-func (g *Git) Type() string {
+func (m *Git) Type() string {
 	return `git`
 }
 
 func (m *Git) SetAttributes(cfg map[string]interface{}) error {
 	attrs := hash(cfg)
-	if err := attrs.copyStrIfPresent(m.hash, `url`); err != nil {
-		return err
+	for key, _ := range attrs {
+		switch key {
+		case `url`:
+			if err := attrs.copyStrIfPresentTo(m.hash, key); err != nil {
+				return err
+			}
+		case `branch`:
+			if err := attrs.copyStrOrDefaultTo(m.hash, `branch`, `master`); err != nil {
+				return err
+			}
+		case `auto_update`:
+			if err := attrs.copyBoolOrDefaultTo(m.hash, key, true); err != nil {
+				return err
+			}
+		case `name`:
+			if err := attrs.copyNillableStrTo(m.hash, key); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf(`%q material does not accept key %q`, m.Type(), key)
+		}
 	}
-	if err := attrs.copyStrOrDefault(m.hash, `branch`, `master`); err != nil {
-		return err
-	}
-	return attrs.copyStrIfNotNull(m.hash, `name`)
+	return nil
 }
 
-func (m *Git) asMap() hash {
+func (m *Git) asHashMap() hash {
 	return hash{
 		`type`:       m.Type(),
-		`attributes`: m.hash.copyTo(make(hash)),
+		`attributes`: m.hash,
 	}
+}
+
+func (m *Git) Equivalent(other Material) bool {
+	return m.asHashMap().Equivalent(other.asHashMap())
 }
 
 func (m *Git) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.asMap())
+	return json.Marshal(m.asHashMap())
 }
 
 func (m *Git) UnmarshalJSON(b []byte) error {
@@ -108,27 +130,46 @@ type Hg struct {
 	hash
 }
 
-func (g *Hg) Type() string {
+func (m *Hg) Type() string {
 	return `hg`
 }
 
 func (m *Hg) SetAttributes(cfg map[string]interface{}) error {
 	attrs := hash(cfg)
-	if err := attrs.copyStrIfPresent(m.hash, `url`); err != nil {
-		return err
+	for key, _ := range attrs {
+		switch key {
+		case `url`:
+			if err := attrs.copyStrIfPresentTo(m.hash, key); err != nil {
+				return err
+			}
+		case `auto_update`:
+			if err := attrs.copyBoolOrDefaultTo(m.hash, key, true); err != nil {
+				return err
+			}
+		case `name`:
+			if err := attrs.copyNillableStrTo(m.hash, key); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf(`%q material does not accept key %q`, m.Type(), key)
+		}
 	}
-	return attrs.copyStrIfNotNull(m.hash, `name`)
+	return nil
 }
 
-func (m *Hg) asMap() hash {
+func (m *Hg) asHashMap() hash {
 	return hash{
 		`type`:       m.Type(),
-		`attributes`: m.hash.copyTo(make(hash)),
+		`attributes`: m.hash,
 	}
+}
+
+func (m *Hg) Equivalent(other Material) bool {
+	return m.asHashMap().Equivalent(other.asHashMap())
 }
 
 func (m *Hg) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.asMap())
+	return json.Marshal(m.asHashMap())
 }
 
 func (m *Hg) UnmarshalJSON(b []byte) error {
@@ -149,33 +190,40 @@ func (m *Svn) Type() string {
 
 func (m *Svn) SetAttributes(cfg map[string]interface{}) error {
 	attrs := hash(cfg)
-	if err := attrs.copyStrIfPresent(m.hash, `url`); err != nil {
-		return err
+	for key, _ := range attrs {
+		switch key {
+		case `url`, `username`, `password`, `encrypted_password`:
+			if err := attrs.copyStrIfPresentTo(m.hash, key); err != nil {
+				return err
+			}
+		case `auto_update`, `check_externals`:
+			if err := attrs.copyBoolOrDefaultTo(m.hash, key, true); err != nil {
+				return err
+			}
+		case `name`:
+			if err := attrs.copyNillableStrTo(m.hash, key); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf(`%q material does not accept key %q`, m.Type(), key)
+		}
 	}
-	if err := attrs.copyStrIfPresent(m.hash, `username`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `password`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `encrypted_password`); err != nil {
-		return err
-	}
-	if err := attrs.copyBoolOrDefault(m.hash, `check_externals`, true); err != nil {
-		return err
-	}
-	return attrs.copyStrIfNotNull(m.hash, `name`)
+	return nil
 }
 
-func (m *Svn) asMap() hash {
+func (m *Svn) asHashMap() hash {
 	return hash{
 		`type`:       m.Type(),
-		`attributes`: m.hash.copyTo(make(hash)),
+		`attributes`: m.hash,
 	}
+}
+
+func (m *Svn) Equivalent(other Material) bool {
+	return m.asHashMap().Equivalent(other.asHashMap())
 }
 
 func (m *Svn) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.asMap())
+	return json.Marshal(m.asHashMap())
 }
 
 func (m *Svn) UnmarshalJSON(b []byte) error {
@@ -196,36 +244,40 @@ func (m *P4) Type() string {
 
 func (m *P4) SetAttributes(cfg map[string]interface{}) error {
 	attrs := hash(cfg)
-	if err := attrs.copyStrIfPresent(m.hash, `port`); err != nil {
-		return err
+	for key, _ := range attrs {
+		switch key {
+		case `port`, `view`, `domain`, `username`, `password`, `encrypted_password`:
+			if err := attrs.copyStrIfPresentTo(m.hash, key); err != nil {
+				return err
+			}
+		case `auto_update`, `use_tickets`:
+			if err := attrs.copyBoolOrDefaultTo(m.hash, key, true); err != nil {
+				return err
+			}
+		case `name`:
+			if err := attrs.copyNillableStrTo(m.hash, key); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf(`%q material does not accept key %q`, m.Type(), key)
+		}
 	}
-	if err := attrs.copyStrIfPresent(m.hash, `view`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `username`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `password`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `encrypted_password`); err != nil {
-		return err
-	}
-	if err := attrs.copyBoolOrDefault(m.hash, `use_tickets`, true); err != nil {
-		return err
-	}
-	return attrs.copyStrIfNotNull(m.hash, `name`)
+	return nil
 }
 
-func (m *P4) asMap() hash {
+func (m *P4) asHashMap() hash {
 	return hash{
 		`type`:       m.Type(),
-		`attributes`: m.hash.copyTo(make(hash)),
+		`attributes`: m.hash,
 	}
+}
+
+func (m *P4) Equivalent(other Material) bool {
+	return m.asHashMap().Equivalent(other.asHashMap())
 }
 
 func (m *P4) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.asMap())
+	return json.Marshal(m.asHashMap())
 }
 
 func (m *P4) UnmarshalJSON(b []byte) error {
@@ -246,36 +298,40 @@ func (m *Tfs) Type() string {
 
 func (m *Tfs) SetAttributes(cfg map[string]interface{}) error {
 	attrs := hash(cfg)
-	if err := attrs.copyStrIfPresent(m.hash, `url`); err != nil {
-		return err
+	for key, _ := range attrs {
+		switch key {
+		case `url`, `project_path`, `domain`, `username`, `password`, `encrypted_password`:
+			if err := attrs.copyStrIfPresentTo(m.hash, key); err != nil {
+				return err
+			}
+		case `auto_update`:
+			if err := attrs.copyBoolOrDefaultTo(m.hash, key, true); err != nil {
+				return err
+			}
+		case `name`:
+			if err := attrs.copyNillableStrTo(m.hash, key); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf(`%q material does not accept key %q`, m.Type(), key)
+		}
 	}
-	if err := attrs.copyStrIfPresent(m.hash, `project_path`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `username`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `password`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `encrypted_password`); err != nil {
-		return err
-	}
-	if err := attrs.copyStrIfPresent(m.hash, `domain`); err != nil {
-		return err
-	}
-	return attrs.copyStrIfNotNull(m.hash, `name`)
+	return nil
 }
 
-func (m *Tfs) asMap() hash {
+func (m *Tfs) asHashMap() hash {
 	return hash{
 		`type`:       m.Type(),
-		`attributes`: m.hash.copyTo(make(hash)),
+		`attributes`: m.hash,
 	}
+}
+
+func (m *Tfs) Equivalent(other Material) bool {
+	return m.asHashMap().Equivalent(other.asHashMap())
 }
 
 func (m *Tfs) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.asMap())
+	return json.Marshal(m.asHashMap())
 }
 
 func (m *Tfs) UnmarshalJSON(b []byte) error {

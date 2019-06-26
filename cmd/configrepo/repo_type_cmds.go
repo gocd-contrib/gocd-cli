@@ -26,7 +26,7 @@ func GitRepoCmd(doCreate bool) (cmd *cobra.Command) {
 			Args:  cobra.ExactArgs(1),
 			Run: builder.AddRepo(func(cmd *cobra.Command, repo *ConfigRepo, m materials.Material) {
 				utils.AbortLoudlyOnError(m.SetRequiredString(`url`, repoUrl))
-				m.SetString(`branch`, branch, `master`)
+				m.SetStringWithDefault(`branch`, branch, `master`)
 			}),
 		}
 	} else {

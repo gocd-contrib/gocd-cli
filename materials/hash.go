@@ -3,6 +3,7 @@ package materials
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/spf13/pflag"
 )
@@ -17,7 +18,7 @@ func (h hash) SetRequiredString(key, val string) error {
 	return nil
 }
 
-func (h hash) SetString(key, val, defaultVal string) {
+func (h hash) SetStringWithDefault(key, val, defaultVal string) {
 	if `` == val {
 		val = defaultVal
 	}
@@ -40,9 +41,45 @@ func (h hash) SetBool(key string, val bool) {
 	h[key] = val
 }
 
-func (h hash) copyStrIfNotNull(dest hash, key string) error {
+func (h hash) Equivalent(other hash) bool {
+	if len(h) != len(other) {
+		return false
+	}
+
+	for key, otherval := range other {
+		if myval, ok := h[key]; !ok {
+			return false
+		} else {
+			switch otherval.(type) {
+			case string, bool, int, int64, float64:
+				if myval != otherval {
+					return false
+				}
+			case hash:
+				if sub, ok := myval.(hash); !ok {
+					return false
+				} else {
+					if !hash(sub).Equivalent(otherval.(hash)) {
+						return false
+					}
+				}
+			default:
+				log.Fatalf("`hash` type does not know how to compare values of type %T; please add a case for this in hash.Equivalent()", otherval)
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// A strange concept in Golang, but some of the material attributes may be returned as `null`
+// from GoCD even if they usually refer to strings. The `name` key comes to mind, and we need
+// to allow this to be set.
+func (h hash) copyNillableStrTo(dest hash, key string) error {
 	if val, ok := h[key]; ok {
 		if val == nil {
+			dest[key] = nil
 			return nil
 		}
 
@@ -55,7 +92,7 @@ func (h hash) copyStrIfNotNull(dest hash, key string) error {
 	return nil
 }
 
-func (h hash) copyStrIfPresent(dest hash, key string) error {
+func (h hash) copyStrIfPresentTo(dest hash, key string) error {
 	if val, ok := h[key]; ok {
 		if s, ok := val.(string); ok {
 			dest[key] = s
@@ -66,7 +103,7 @@ func (h hash) copyStrIfPresent(dest hash, key string) error {
 	return nil
 }
 
-func (h hash) copyStrOrDefault(dest hash, key, defaultVal string) error {
+func (h hash) copyStrOrDefaultTo(dest hash, key, defaultVal string) error {
 	if val, ok := h[key]; ok {
 		if s, ok := val.(string); ok {
 			dest[key] = s
@@ -79,7 +116,7 @@ func (h hash) copyStrOrDefault(dest hash, key, defaultVal string) error {
 	return nil
 }
 
-func (h hash) copyBoolIfPresent(dest hash, key string) error {
+func (h hash) copyBoolIfPresentTo(dest hash, key string) error {
 	if val, ok := h[key]; ok {
 		if b, ok := val.(bool); ok {
 			dest[key] = b
@@ -90,7 +127,7 @@ func (h hash) copyBoolIfPresent(dest hash, key string) error {
 	return nil
 }
 
-func (h hash) copyBoolOrDefault(dest hash, key string, defaultVal bool) error {
+func (h hash) copyBoolOrDefaultTo(dest hash, key string, defaultVal bool) error {
 	if val, ok := h[key]; ok {
 		if b, ok := val.(bool); ok {
 			dest[key] = b
@@ -101,13 +138,6 @@ func (h hash) copyBoolOrDefault(dest hash, key string, defaultVal bool) error {
 		dest[key] = defaultVal
 	}
 	return nil
-}
-
-func (h hash) copyTo(dest hash) hash {
-	for k, v := range h {
-		dest[k] = v
-	}
-	return dest
 }
 
 func (h hash) subHash(key string) (hash, error) {

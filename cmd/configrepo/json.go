@@ -64,6 +64,22 @@ func (cr *ConfigRepo) UnmarshalJSON(data []byte) (err error) {
 	return nil
 }
 
+func (cr *ConfigRepo) Equivalent(other *ConfigRepo) bool {
+	if other == nil || cr.Id != other.Id {
+		return false
+	}
+
+	if (cr.Material == nil && other.Material != nil) || (other.Material == nil && cr.Material != nil) {
+		return false
+	}
+
+	if !cr.Material.Equivalent(other.Material) {
+		return false
+	}
+
+	return true
+}
+
 func propertyFromMap(data map[string]interface{}) (prop Property, err error) {
 	el := dict(data)
 	if k, ok := el[`key`]; !ok {
@@ -99,7 +115,8 @@ func propertyFromMap(data map[string]interface{}) (prop Property, err error) {
 
 type Property interface {
 	Name() string
-	Pair() string
+	String() string
+	Equivalent(Property) bool
 }
 
 func NewPlainTextProperty(key, val string) Property {
@@ -119,8 +136,13 @@ func (p *PlainTextProperty) Name() string {
 	return p.Key
 }
 
-func (p *PlainTextProperty) Pair() string {
+func (p *PlainTextProperty) String() string {
 	return p.Key + `: ` + p.Value
+}
+
+func (p *PlainTextProperty) Equivalent(other Property) bool {
+	that, ok := other.(*PlainTextProperty)
+	return ok && *p == *that
 }
 
 type SecretProperty struct {
@@ -132,8 +154,13 @@ func (p *SecretProperty) Name() string {
 	return p.Key
 }
 
-func (p *SecretProperty) Pair() string {
+func (p *SecretProperty) String() string {
 	return p.Key + `: ************`
+}
+
+func (p *SecretProperty) Equivalent(other Property) bool {
+	that, ok := other.(*SecretProperty)
+	return ok && *p == *that
 }
 
 type dict map[string]interface{}

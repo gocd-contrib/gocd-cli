@@ -10,10 +10,10 @@ import (
 func TestGitMarshal(t *testing.T) {
 	as := asserts(t)
 	m := materials.NewGit()
-	m.SetAttributes(map[string]interface{}{
+	as.ok(m.SetAttributes(map[string]interface{}{
 		`url`:    `http://foobar.com`,
 		`branch`: `twig`,
-	})
+	}))
 
 	b, err := json.MarshalIndent(m, ``, `  `)
 	as.ok(err)
@@ -31,11 +31,11 @@ func TestGitMarshal(t *testing.T) {
 func TestGitUnmarshal(t *testing.T) {
 	as := asserts(t)
 	expected := materials.NewGit()
-	expected.SetAttributes(map[string]interface{}{
+	as.ok(expected.SetAttributes(map[string]interface{}{
 		`url`:         `http://foobar.com`,
 		`branch`:      `twig`,
 		`auto_update`: true,
-	})
+	}))
 
 	actual := materials.NewGit()
 	as.ok(json.Unmarshal([]byte(`{
@@ -47,15 +47,15 @@ func TestGitUnmarshal(t *testing.T) {
     }
   }`), &actual))
 
-	as.deepEq(expected, actual)
+	as.materialsEq(expected, actual)
 }
 
 func TestHgMarshal(t *testing.T) {
 	as := asserts(t)
 	m := materials.NewHg()
-	m.SetAttributes(map[string]interface{}{
+	as.ok(m.SetAttributes(map[string]interface{}{
 		`url`: `http://foobar.com`,
-	})
+	}))
 
 	b, err := json.MarshalIndent(m, ``, `  `)
 	as.ok(err)
@@ -72,11 +72,10 @@ func TestHgMarshal(t *testing.T) {
 func TestHgUnmarshal(t *testing.T) {
 	as := asserts(t)
 	expected := materials.NewHg()
-	expected.SetAttributes(map[string]interface{}{
+	as.ok(expected.SetAttributes(map[string]interface{}{
 		`url`:         `http://foobar.com`,
-		`branch`:      `twig`,
 		`auto_update`: true,
-	})
+	}))
 
 	actual := materials.NewHg()
 	as.ok(json.Unmarshal([]byte(`{
@@ -87,19 +86,19 @@ func TestHgUnmarshal(t *testing.T) {
     }
   }`), &actual))
 
-	as.deepEq(expected, actual)
+	as.materialsEq(expected, actual)
 }
 
 func TestSvnMarshal(t *testing.T) {
 	as := asserts(t)
 	m := materials.NewSvn()
-	m.SetAttributes(map[string]interface{}{
+	as.ok(m.SetAttributes(map[string]interface{}{
 		`url`:                `http://foobar.com`,
 		`username`:           `admin`,
 		`password`:           `foo`,
 		`encrypted_password`: `baz`,
 		`check_externals`:    true,
-	})
+	}))
 
 	b, err := json.MarshalIndent(m, ``, `  `)
 	as.ok(err)
@@ -120,14 +119,14 @@ func TestSvnMarshal(t *testing.T) {
 func TestSvnUnmarshal(t *testing.T) {
 	as := asserts(t)
 	expected := materials.NewSvn()
-	expected.SetAttributes(map[string]interface{}{
+	as.ok(expected.SetAttributes(map[string]interface{}{
 		`url`:                `http://foobar.com`,
 		`username`:           `admin`,
 		`password`:           `foo`,
 		`encrypted_password`: `baz`,
 		`check_externals`:    true,
 		`auto_update`:        true,
-	})
+	}))
 
 	actual := materials.NewSvn()
 	as.ok(json.Unmarshal([]byte(`{
@@ -141,20 +140,20 @@ func TestSvnUnmarshal(t *testing.T) {
     }
   }`), &actual))
 
-	as.deepEq(expected, actual)
+	as.materialsEq(expected, actual)
 }
 
 func TestP4Marshal(t *testing.T) {
 	as := asserts(t)
 	m := materials.NewP4()
-	m.SetAttributes(map[string]interface{}{
+	as.ok(m.SetAttributes(map[string]interface{}{
 		`port`:               `foobar.com:443`,
 		`view`:               `my-view`,
 		`username`:           `admin`,
 		`password`:           `foo`,
 		`encrypted_password`: `baz`,
 		`use_tickets`:        true,
-	})
+	}))
 
 	b, err := json.MarshalIndent(m, ``, `  `)
 	as.ok(err)
@@ -176,7 +175,7 @@ func TestP4Marshal(t *testing.T) {
 func TestP4Unmarshal(t *testing.T) {
 	as := asserts(t)
 	expected := materials.NewP4()
-	expected.SetAttributes(map[string]interface{}{
+	as.ok(expected.SetAttributes(map[string]interface{}{
 		`port`:               `foobar.com:443`,
 		`view`:               `my-view`,
 		`username`:           `admin`,
@@ -184,7 +183,7 @@ func TestP4Unmarshal(t *testing.T) {
 		`encrypted_password`: `baz`,
 		`use_tickets`:        true,
 		`auto_update`:        true,
-	})
+	}))
 
 	actual := materials.NewP4()
 	as.ok(json.Unmarshal([]byte(`{
@@ -199,20 +198,20 @@ func TestP4Unmarshal(t *testing.T) {
     }
   }`), &actual))
 
-	as.deepEq(expected, actual)
+	as.materialsEq(expected, actual)
 }
 
 func TestTfsMarshal(t *testing.T) {
 	as := asserts(t)
 	m := materials.NewTfs()
-	m.SetAttributes(map[string]interface{}{
+	as.ok(m.SetAttributes(map[string]interface{}{
 		`url`:                `http://foobar.com`,
 		`project_path`:       `my-project_path`,
 		`domain`:             `my-domain`,
 		`username`:           `admin`,
 		`password`:           `foo`,
 		`encrypted_password`: `baz`,
-	})
+	}))
 
 	b, err := json.MarshalIndent(m, ``, `  `)
 	as.ok(err)
@@ -234,7 +233,7 @@ func TestTfsMarshal(t *testing.T) {
 func TestTfsUnmarshal(t *testing.T) {
 	as := asserts(t)
 	expected := materials.NewTfs()
-	expected.SetAttributes(map[string]interface{}{
+	as.ok(expected.SetAttributes(map[string]interface{}{
 		`url`:                `http://foobar.com`,
 		`project_path`:       `my-project_path`,
 		`domain`:             `my-domain`,
@@ -242,7 +241,7 @@ func TestTfsUnmarshal(t *testing.T) {
 		`password`:           `foo`,
 		`encrypted_password`: `baz`,
 		`auto_update`:        true,
-	})
+	}))
 
 	actual := materials.NewTfs()
 	as.ok(json.Unmarshal([]byte(`{
@@ -257,5 +256,5 @@ func TestTfsUnmarshal(t *testing.T) {
     }
   }`), &actual))
 
-	as.deepEq(expected, actual)
+	as.materialsEq(expected, actual)
 }

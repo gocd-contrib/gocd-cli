@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"reflect"
 	"testing"
+
+	"github.com/gocd-contrib/gocd-cli/materials"
 )
 
 type asserter struct {
@@ -43,9 +45,10 @@ func (a *asserter) jsonEq(expected, actual string) {
 	}
 }
 
-func (a *asserter) deepEq(expected, actual interface{}) {
-	if !reflect.DeepEqual(expected, actual) {
-		a.t.Errorf("Expected:\n%v\n\nto be deeply equal to:\n%v", expected, actual)
+func (a *asserter) materialsEq(expected, actual materials.Material) {
+	a.t.Helper()
+	if !expected.Equivalent(actual) {
+		a.t.Errorf("Expected material:\n%v\n\nto be equivalent to:\n%v", expected, actual)
 	}
 }
 

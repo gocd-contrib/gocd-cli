@@ -43,10 +43,10 @@ func TestUnmarshalConfigRepo(t *testing.T) {
 		configrepo.NewSecretProperty(`token`, `abcd1234`),
 	)
 
-	expected.Material.SetAttributes(map[string]interface{}{
+	as.ok(expected.Material.SetAttributes(map[string]interface{}{
 		`url`:    `https://github.com/config-repo/gocd-json-config-example2.git`,
 		`branch`: `master`,
-	})
+	}))
 
 	as.deepEq(expected, actual)
 }
@@ -62,10 +62,10 @@ func TestMarshalConfigRepo(t *testing.T) {
 		configrepo.NewSecretProperty(`token`, `abcd1234`),
 	)
 
-	repo.Material.SetAttributes(map[string]interface{}{
+	as.ok(repo.Material.SetAttributes(map[string]interface{}{
 		`url`:    `https://github.com/config-repo/gocd-json-config-example2.git`,
 		`branch`: `master`,
-	})
+	}))
 
 	b, err := json.MarshalIndent(repo, ``, `  `)
 	as.ok(err)
