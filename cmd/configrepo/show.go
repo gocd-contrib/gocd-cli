@@ -1,11 +1,8 @@
 package configrepo
 
 import (
-	"net/url"
-	"path"
+	"encoding/json"
 
-	"github.com/gocd-contrib/gocd-cli/api"
-	"github.com/gocd-contrib/gocd-cli/dub"
 	"github.com/gocd-contrib/gocd-cli/utils"
 	"github.com/spf13/cobra"
 )
@@ -24,30 +21,17 @@ var show = &ShowRunner{}
 type ShowRunner struct{}
 
 func (r *ShowRunner) Run(args []string) {
-	if err := api.V1.Get(r.url(args[0])).Send(r.onSuccess, r.onFail); err != nil {
+	if err := Model.FetchRepo(args[0], func(repo *ConfigRepo) error {
+		if b, err := json.MarshalIndent(repo, ``, `  `); err == nil {
+			utils.Echofln(string(b))
+			return nil
+		} else {
+			return err
+		}
+	}); err != nil {
 		utils.AbortLoudly(err)
 	}
-}
-
-func (r *ShowRunner) url(id string) string {
-	return path.Join(`/api/admin/config_repos`, url.PathEscape(id))
-}
-
-func (r *ShowRunner) onSuccess(res *dub.Response) error {
-	return api.ReadBodyAndDo(res, func(b []byte) error {
-		utils.Echofln(string(b))
-		return nil
-	})
-}
-
-func (r *ShowRunner) onFail(res *dub.Response) error {
-	return api.ReadBodyAndDo(res, func(b []byte) error {
-		_, id := path.Split(res.Raw.Request.URL.Path)
-		api.DieOnAuthError(res)
-		api.DieOnNotFound(res, `No such config-repo with id: %q`, id)
-
-		return nil
-	})
+	return
 }
 
 func init() {

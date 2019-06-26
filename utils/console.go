@@ -98,6 +98,12 @@ func DieLoudly(exitCode int, f string, t ...interface{}) {
 	os.Exit(exitCode)
 }
 
+func AbortLoudlyOnError(err error) {
+	if err != nil {
+		AbortLoudly(err)
+	}
+}
+
 func AbortLoudly(err error) {
 	DieLoudly(1, "%s", err.Error())
 }

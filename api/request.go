@@ -30,18 +30,18 @@ func (r *Req) Send(onResponse, onErrorResponse func(*dub.Response) error) error 
 	} else {
 		handleResponse := func(res *dub.Response) error {
 			if res.IsError() {
-				utils.Debug(`handling error response %d`, res.Status)
+				utils.Debug(`Handling error response %d`, res.Status)
 				if onErrorResponse != nil {
 					return onErrorResponse(res)
 				}
-				utils.Debug(`error response handler is nil; ignoring response`)
+				utils.Debug(`Error response handler is nil; ignoring response`)
 				return nil
 			}
-			utils.Debug(`handling success response %d`, res.Status)
+			utils.Debug(`Handling success response %d`, res.Status)
 			if onResponse != nil {
 				return onResponse(res)
 			}
-			utils.Debug(`success response handler is nil; ignoring response`)
+			utils.Debug(`Success response handler is nil; ignoring response`)
 			return nil
 		}
 

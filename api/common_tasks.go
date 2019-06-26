@@ -30,6 +30,32 @@ func ReadBodyAndDo(res *dub.Response, action func([]byte) error) error {
 	})
 }
 
+func DieOnUnexpected(res *dub.Response, body []byte) {
+	if 500 <= res.Status {
+		utils.DieLoudly(1, `Server responded with %d: %s`, res.Status, string(body))
+	}
+}
+
+func DieOn4XX(res *dub.Response, body []byte, bodyParser func([]byte) (MessageResponse, error)) {
+	if 399 < res.Status && 500 > res.Status {
+		if bodyParser == nil {
+			bodyParser = ParseMessage
+		}
+		if m, err := bodyParser(body); err == nil {
+			utils.DieLoudly(1, m.String())
+		} else {
+			utils.InspectError(err, `parsing %d response message: %q`, res.Status, string(body))
+			utils.DieLoudly(1, `Server responded with %d: %s`, res.Status, string(body))
+		}
+	}
+}
+
+func DieOnEtagStale(res *dub.Response, errorMsg string, t ...interface{}) {
+	if 412 == res.Status {
+		utils.DieLoudly(1, errorMsg, t...)
+	}
+}
+
 func DieOnNotFound(res *dub.Response, errorMsg string, t ...interface{}) {
 	if res.IsNotFound() {
 		utils.DieLoudly(1, errorMsg, t...)
