@@ -48,6 +48,8 @@ function ldflags {
   echo "-X main.Version=${RELEASE} -X main.GitCommit=${GIT_COMMIT} -X main.Platform=${_arch}-${_os}"
 }
 
+export GO111MODULE=on
+
 echo "Fetching dependencies"
 go get -tags netgo -d $extra_flags ./...
 
