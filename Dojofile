@@ -1,2 +1,2 @@
-DOJO_DOCKER_IMAGE=kudulab/golang-dojo:1.0.0
+DOJO_DOCKER_IMAGE=kudulab/golang-dojo:1.1.0
 DOJO_WORK_INNER="/dojo/work/src/gocd-cli"
