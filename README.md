@@ -89,7 +89,7 @@ Note: The base URL is the URL up through the context path, which defaults to `/g
 $ gocd config server-url https://build.gocd.org/go
 ```
 
-#### Example: `auth-token`, `auth-basic`: Save auth credentials for API calls
+#### Example: `auth-token`, `auth-basic`, `auth-none`: Configure auth credentials for API calls
 
 Using API Token Authentication:
 
@@ -108,6 +108,14 @@ Using Basic Authentication:
 ```bash
 # Save Basic Authentication credentials to your config file
 $ gocd config auth-basic myuser secretpassword
+```
+
+Using No Authentication (**MUST be set when GoCD server security is disabled**):
+
+```bash
+# Configures settings to omit the `Authorization` header in API calls. This os
+# mainly aimed at test GoCD server instances that have security disabled.
+$ gocd config auth-none
 ```
 
 #### Example: `delete`: Delete auth credentials
@@ -131,9 +139,10 @@ Alternatively, the settings can be configured or overridden using environment va
 ```bash
 # For auth-token, set GOCDCLI_AUTH.TYPE=token and GOCDCLI_AUTH.TOKEN=mysupersecrettoken
 # For auth-basic, set GOCDCLI_AUTH.TYPE=basic, GOCDCLI_AUTH.USER=myuser, amd GOCDCLI_AUTH.PASSWORD=mysupersecretpasswd
+# For auth-none, set GOCDCLI_AUTH.TYPE=none
 # For server-url, set GOCDCLI_SERVER.URL=https://your-gocd-host/go
 
-$ GOCDCLI_AUTH.TYPE="token" GOCDCLI_AUTH.TOKEN="mysupersecrettoken" gocd configrepo --yaml preflight my-pipeline.gocd.yaml
+$ env "GOCDCLI_AUTH.TYPE=token" "GOCDCLI_AUTH.TOKEN=mysupersecrettoken" gocd configrepo --yaml preflight my-pipeline.gocd.yaml
 OK
 ```
 

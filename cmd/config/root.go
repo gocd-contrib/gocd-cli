@@ -9,7 +9,7 @@ var RootCmd = &cobra.Command{
 	Use:       "config",
 	Aliases:   []string{"cf"},
 	Short:     "GoCD CLI configuration",
-	ValidArgs: []string{"auth-basic", "server-url", "help", "rm"}, // bash-completion
+	ValidArgs: []string{"auth-token", "auth-basic", "auth-none", "server-url", "help", "rm"}, // bash-completion
 }
 
 // convenvience method so subcommands don't need to import cfg

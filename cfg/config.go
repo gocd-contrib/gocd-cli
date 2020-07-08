@@ -78,6 +78,15 @@ func (c *Config) WithBaseUrlValidation(urlArg string, onValid func(string) error
 	}
 }
 
+func (c *Config) SetRequestsAreUnauthenticated() error {
+	return utils.InspectError(c.writeConfigExcludingKey(`auth`, func(cfg dict) error {
+		cfg[`auth`] = dict{
+			`type`: `none`,
+		}
+		return nil
+	}), `specifying that all API requests do not require authentication`)
+}
+
 func (c *Config) SetBasicAuth(user, pass string) error {
 	if "" == user || "" == pass {
 		return errors.New("Must specify user and password")
@@ -110,11 +119,12 @@ func (c *Config) SetTokenAuth(token string) error {
 func (c *Config) GetAuth() map[string]string {
 	authType := c.native.GetString(`auth.type`)
 
+	result := map[string]string{
+		`type`: authType,
+	}
+
 	switch authType {
 	case `basic`:
-		result := map[string]string{
-			`type`: authType,
-		}
 		// favor accessing individual nested keys so we honor
 		// environment variable overrides with Viper (i.e.,
 		// GOCDCLI_AUTH.* environment variables)
@@ -122,10 +132,9 @@ func (c *Config) GetAuth() map[string]string {
 		setIfPresent(result, `auth.password`, `password`, c.native)
 		return result
 	case `token`:
-		result := map[string]string{
-			`type`: authType,
-		}
 		setIfPresent(result, `auth.token`, `token`, c.native)
+		return result
+	case `none`:
 		return result
 	default:
 		return c.native.GetStringMapString(`auth`)
