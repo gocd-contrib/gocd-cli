@@ -16,9 +16,7 @@ pipelines:
         git: https://github.com/gocd/codesigning
         destination: codesigning
       signing-keys:
-        git: https://github.com/gocd-private/signing-keys
-        username: gocd-ci-user
-        encrypted_password: "AES:taOvOCaXsoVwzIi+xIGLdA==:GSfhZ6KKt6MXKp/wdYYoyBQKKzbTiyDa+35kDgkEIOF75s9lzerGInbqbUM7nUKc"
+        git: https://git.gocd.io/git/gocd/signing-keys
         destination: signing-keys
     stages:
       - build:
