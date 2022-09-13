@@ -5,7 +5,7 @@ A command-line companion to GoCD. In its current state, it mostly has helpers fo
 ## Development
 
 This is a [golang](https://golang.org/) project, so if you are new to this, please set up your environment according to [this page](https://golang.org/doc/code.html#Workspaces).
-Golang version >= 1.12.7 is needed.
+Golang version >= 1.19.1 is needed.
 
 To build the `gocd` binary, run the `build.sh` command:
 

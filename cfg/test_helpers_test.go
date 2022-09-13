@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/spf13/afero"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func writeContent(fs afero.Fs, path, content string) error {
