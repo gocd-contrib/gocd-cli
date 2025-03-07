@@ -10,7 +10,7 @@ pipelines:
     display_order: -10
     materials:
       github:
-        git: https://github.com/gocd-contrib/gocd-cli
+        git: https://git.gocd.io/git/gocd-contrib/gocd-cli
         destination: cli
       codesigning:
         git: https://github.com/gocd/codesigning
