@@ -18,12 +18,6 @@ pipelines:
         ignore:
           - "**/*.*"
           - "**/*"
-      signing-keys:
-        git: https://git.gocd.io/git/gocd/signing-keys
-        destination: signing-keys
-        ignore:
-          - "**/*.*"
-          - "**/*"
     stages:
       - build:
           elastic_profile_id: ecs-golang-build
