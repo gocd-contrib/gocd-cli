@@ -1,5 +1,5 @@
 ---
-format_version: 5
+format_version: 10
 environments:
   internal:
     pipelines:
@@ -15,9 +15,15 @@ pipelines:
       codesigning:
         git: https://github.com/gocd/codesigning
         destination: codesigning
+        ignore:
+          - "**/*.*"
+          - "**/*"
       signing-keys:
         git: https://git.gocd.io/git/gocd/signing-keys
         destination: signing-keys
+        ignore:
+          - "**/*.*"
+          - "**/*"
     stages:
       - build:
           elastic_profile_id: ecs-golang-build
