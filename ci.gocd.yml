@@ -10,15 +10,13 @@ pipelines:
     materials:
       github:
         git: https://git.gocd.io/git/gocd-contrib/gocd-cli
-        destination: cli
     stages:
       - build:
           elastic_profile_id: ecs-golang-build
           tasks:
             - script: |
                 set -eux
-                cli/build.sh --verbose --prod --release=1.0.0
-                mv cli/dist .
+                build.sh --verbose --prod --release=1.0.0
                 echo "Collating binaries..."
                 sha256sum dist/darwin/amd64/gocd
                 sha256sum dist/linux/amd64/gocd
