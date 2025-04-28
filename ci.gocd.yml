@@ -7,87 +7,23 @@ environments:
 pipelines:
   gocd-cli:
     group: go-cd-contrib
-    display_order: -10
     materials:
       github:
         git: https://git.gocd.io/git/gocd-contrib/gocd-cli
         destination: cli
-      codesigning:
-        git: https://github.com/gocd/codesigning
-        destination: codesigning
-        ignore:
-          - "**/*.*"
-          - "**/*"
     stages:
       - build:
           elastic_profile_id: ecs-golang-build
+          tasks:
+            - script: |
+                set -eux
+                cli/build.sh --verbose --prod --release=1.0.0
+                mv cli/dist .
+                echo "Collating binaries..."
+                sha256sum dist/darwin/amd64/gocd
+                sha256sum dist/linux/amd64/gocd
+                sha256sum dist/windows/amd64/gocd.exe
+                zip -r clis.zip dist
           artifacts:
             - build:
-                source: dist/**/*
-                destination: dist/
-          tasks:
-          - exec:
-              command: /bin/bash
-              arguments:
-                - build.sh
-                - --verbose
-                - --prod
-                - --release=1.0.0
-              working_directory: cli
-          - exec:
-              command: mv
-              arguments:
-                - dist
-                - ..
-              working_directory: cli
-      - code-signing:
-          clean_workspace: yes
-          secure_variables:
-            GOCD_GPG_PASSPHRASE: "AES:7lAutKoRKMuSnh3Sbg9DeQ==:8fhND9w/8AWw6dJhmWpTcCdKSsEcOzriQNiKFZD6XtN+sJvZ65NH/QFXRNiy192+SSTKsbhOrFmw+kAKt5+MH1Erd6H54zJjpSgvJUmsJaQ="
-          jobs:
-            win:
-              elastic_profile_id: ecs-gocd-dev-build
-              artifacts:
-                - build:
-                    source: win-cli.zip
-              tasks:
-              - fetch:
-                  stage: build
-                  job: build
-                  source: dist/
-              - exec:
-                  command: rake
-                  arguments:
-                    - win:metadata_single_binary[../dist/windows/amd64/gocd.exe,../win-cli.zip]
-                  working_directory: codesigning
-      - bundle:
-          elastic_profile_id: ecs-golang-build
-          artifacts:
-            - build:
-                source: clis.zip
-          tasks:
-          - fetch:
-              stage: build
-              job: build
-              source: dist/
-          - fetch:
-              stage: code-signing
-              job: win
-              source: win-cli.zip
-              is_file: yes
-          - exec:
-              command: /bin/bash
-              arguments:
-                - -c
-                - |
-                  echo "Collating codesigned binaries..."
-                  (cd dist/windows/amd64 && unzip -o ../../../win-cli.zip)
-                  sha256sum dist/darwin/amd64/gocd
-                  sha256sum dist/linux/amd64/gocd
-                  sha256sum dist/windows/amd64/gocd.exe
-          - exec:
-              command: zip
-              arguments:
-                - -r
-                - clis.zip
-                - dist
+                source: win-cli.zip
