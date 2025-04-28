@@ -24,4 +24,4 @@ pipelines:
                 zip -r clis.zip dist
           artifacts:
             - build:
-                source: win-cli.zip
+                source: clis.zip
